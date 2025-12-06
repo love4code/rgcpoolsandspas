@@ -54,6 +54,7 @@ router.put('/media/:id', requireAuth, mediaController.updateMedia);
 router.post('/media/:id/flip', requireAuth, mediaController.flipMedia);
 router.delete('/media/:id', requireAuth, mediaController.deleteMedia);
 router.get('/media/modal', requireAuth, mediaController.getMediaModal);
+router.get('/media/list', requireAuth, mediaController.getMediaList);
 
 // Product routes
 router.get('/products', requireAuth, productController.getProducts);

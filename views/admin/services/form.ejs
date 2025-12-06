@@ -7,10 +7,32 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <style>
-    .icon-picker { max-height: 400px; overflow-y: auto; }
-    .icon-item { cursor: pointer; padding: 10px; border: 2px solid transparent; }
-    .icon-item:hover { background: #f0f0f0; }
-    .icon-item.selected { border-color: #0d6efd; background: #e7f1ff; }
+    .icon-picker { max-height: 600px; overflow-y: auto; }
+    .icon-item { 
+      cursor: pointer; 
+      padding: 10px; 
+      border: 2px solid transparent; 
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .icon-item:hover { 
+      background: #f0f0f0; 
+      border-color: #0d6efd;
+    }
+    .icon-item.selected { 
+      border-color: #0d6efd; 
+      background: #e7f1ff; 
+    }
+    .icon-loading {
+      text-align: center;
+      padding: 20px;
+      color: #6c757d;
+    }
+    #iconCount {
+      font-size: 0.875rem;
+      color: #6c757d;
+      margin-left: 10px;
+    }
   </style>
 </head>
 <body>
@@ -80,16 +102,20 @@
 
   <!-- Icon Picker Modal -->
   <div class="modal fade" id="iconModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Select Bootstrap Icon</h5>
+          <h5 class="modal-title">Select Bootstrap Icon <span id="iconCount"></span></h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body icon-picker">
-          <input type="text" class="form-control mb-3" id="iconSearch" placeholder="Search icons...">
-          <div class="row g-2" id="iconGrid">
+          <input type="text" class="form-control mb-3" id="iconSearch" placeholder="Search icons by name...">
+          <div id="loadingMessage" class="icon-loading">Loading all Bootstrap Icons...</div>
+          <div class="row g-2" id="iconGrid" style="display: none;">
             <!-- Icons will be loaded here -->
+          </div>
+          <div id="noResults" style="display: none;" class="text-center text-muted py-5">
+            No icons found matching your search.
           </div>
         </div>
       </div>
@@ -98,56 +124,202 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Common Bootstrap Icons
-    const icons = [
-      'bi-house', 'bi-building', 'bi-tools', 'bi-wrench', 'bi-hammer', 'bi-gear',
-      'bi-water', 'bi-droplet', 'bi-sun', 'bi-umbrella', 'bi-tree', 'bi-flower1',
-      'bi-star', 'bi-heart', 'bi-check-circle', 'bi-info-circle', 'bi-question-circle',
-      'bi-telephone', 'bi-envelope', 'bi-calendar', 'bi-clock', 'bi-person', 'bi-people',
-      'bi-cart', 'bi-bag', 'bi-cash', 'bi-credit-card', 'bi-receipt', 'bi-gift',
-      'bi-award', 'bi-trophy', 'bi-patch-check', 'bi-shield-check', 'bi-shield-lock',
-      'bi-lightning', 'bi-fire', 'bi-cloud', 'bi-cloud-rain', 'bi-snow', 'bi-wind'
-    ];
+    let allIcons = [];
+    let currentSelectedIcon = '<%= service ? service.icon : "" %>';
 
-    document.getElementById('iconSearch').addEventListener('input', filterIcons);
-    
-    function loadIcons() {
+    // Extract all Bootstrap Icons from the loaded stylesheet
+    function extractAllIcons() {
+      const icons = new Set();
+      
+      // Get all stylesheets
+      for (let sheet of document.styleSheets) {
+        try {
+          // Check if this is the Bootstrap Icons stylesheet
+          if (sheet.href && sheet.href.includes('bootstrap-icons')) {
+            // Get all CSS rules
+            for (let rule of sheet.cssRules || sheet.rules || []) {
+              if (rule.selectorText) {
+                // Match pattern like .bi-icon-name::before or .bi-icon-name:before
+                const matches = rule.selectorText.match(/\.bi-([a-z0-9-]+)::?before/);
+                if (matches && matches[1]) {
+                  icons.add('bi-' + matches[1]);
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // CORS issue - try alternative method
+          console.log('Could not access stylesheet directly, using fallback method');
+        }
+      }
+
+      // Fallback: If we couldn't extract from stylesheet, use comprehensive list
+      if (icons.size === 0) {
+        console.log('Using comprehensive icon list fallback');
+        return getComprehensiveIconList();
+      }
+
+      return Array.from(icons).sort();
+    }
+
+    // Comprehensive list of Bootstrap Icons (fallback)
+    function getComprehensiveIconList() {
+      // This is a comprehensive list of Bootstrap Icons
+      // Fetching from a public API or using a complete list
+      return fetch('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css')
+        .then(response => response.text())
+        .then(css => {
+          const icons = new Set();
+          const regex = /\.bi-([a-z0-9-]+)::?before/g;
+          let match;
+          while ((match = regex.exec(css)) !== null) {
+            icons.add('bi-' + match[1]);
+          }
+          return Array.from(icons).sort();
+        })
+        .catch(() => {
+          // Ultimate fallback - comprehensive manual list
+          return getManualIconList();
+        });
+    }
+
+    // Manual comprehensive list (ultimate fallback)
+    function getManualIconList() {
+      // This would be a very long list - instead, we'll fetch dynamically
+      // For now, return empty and load from CDN
+      return [];
+    }
+
+    // Load all icons dynamically
+    async function loadAllIcons() {
+      const loadingMessage = document.getElementById('loadingMessage');
       const grid = document.getElementById('iconGrid');
+
+      try {
+        // Try to fetch from CDN and parse
+        const response = await fetch('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css');
+        const css = await response.text();
+        
+        const icons = new Set();
+        const regex = /\.bi-([a-z0-9-]+)::?before/g;
+        let match;
+        while ((match = regex.exec(css)) !== null) {
+          icons.add('bi-' + match[1]);
+        }
+        
+        allIcons = Array.from(icons).sort();
+        loadingMessage.style.display = 'none';
+        grid.style.display = 'flex';
+        renderIcons(allIcons);
+        updateIconCount(allIcons.length);
+      } catch (error) {
+        console.error('Error loading icons:', error);
+        // Fallback to extracting from loaded stylesheet
+        allIcons = extractAllIcons();
+        if (Array.isArray(allIcons) && allIcons.length > 0) {
+          loadingMessage.style.display = 'none';
+          grid.style.display = 'block';
+          renderIcons(allIcons);
+          updateIconCount(allIcons.length);
+        } else {
+          loadingMessage.innerHTML = '<div class="alert alert-warning">Error loading icons. Please refresh the page or check your internet connection.</div>';
+        }
+      }
+    }
+
+    function renderIcons(icons) {
+      const grid = document.getElementById('iconGrid');
+      grid.innerHTML = '';
+      
       icons.forEach(icon => {
         const col = document.createElement('div');
         col.className = 'col-md-2 col-3';
+        const iconName = icon.replace('bi-', '');
+        const isSelected = icon === currentSelectedIcon;
         col.innerHTML = `
-          <div class="icon-item text-center p-3" onclick="selectIcon('${icon}')">
+          <div class="icon-item text-center p-3 ${isSelected ? 'selected' : ''}" 
+               onclick="selectIcon('${icon}')" 
+               data-icon-name="${iconName}">
             <i class="${icon} fs-3"></i>
-            <div class="small mt-1">${icon.replace('bi-', '')}</div>
+            <div class="small mt-1" style="word-break: break-word;">${iconName}</div>
           </div>
         `;
         grid.appendChild(col);
       });
+
+      // Highlight current selection if exists
+      if (currentSelectedIcon) {
+        highlightSelectedIcon(currentSelectedIcon);
+      }
+    }
+
+    function highlightSelectedIcon(icon) {
+      document.querySelectorAll('.icon-item').forEach(item => {
+        item.classList.remove('selected');
+        if (item.querySelector('i').className.includes(icon)) {
+          item.classList.add('selected');
+        }
+      });
+    }
+
+    function updateIconCount(count) {
+      document.getElementById('iconCount').textContent = `(${count} icons)`;
     }
 
     function filterIcons() {
       const search = document.getElementById('iconSearch').value.toLowerCase();
+      let visibleCount = 0;
+      const noResults = document.getElementById('noResults');
+      
       document.querySelectorAll('.icon-item').forEach(item => {
-        const text = item.textContent.toLowerCase();
-        item.parentElement.style.display = text.includes(search) ? 'block' : 'none';
+        const iconName = item.getAttribute('data-icon-name').toLowerCase();
+        const matches = iconName.includes(search);
+        item.parentElement.style.display = matches ? 'block' : 'none';
+        if (matches) visibleCount++;
       });
+
+      // Show/hide no results message
+      if (visibleCount === 0 && search.length > 0) {
+        noResults.style.display = 'block';
+        document.getElementById('iconGrid').style.display = 'none';
+      } else {
+        noResults.style.display = 'none';
+        document.getElementById('iconGrid').style.display = 'block';
+      }
+
+      updateIconCount(visibleCount);
     }
 
     function selectIcon(icon) {
       document.getElementById('iconInput').value = icon;
       document.getElementById('iconPreview').className = icon + ' display-1';
+      highlightSelectedIcon(icon);
       bootstrap.Modal.getInstance(document.getElementById('iconModal')).hide();
     }
 
-    document.getElementById('iconInput').addEventListener('input', function() {
-      const icon = this.value;
-      if (icon) {
-        document.getElementById('iconPreview').className = icon + ' display-1';
+    // Initialize when modal opens
+    document.getElementById('iconModal').addEventListener('show.bs.modal', function() {
+      if (allIcons.length === 0) {
+        loadAllIcons();
       }
     });
 
-    loadIcons();
+    // Search functionality
+    document.getElementById('iconSearch').addEventListener('input', filterIcons);
+
+    // Update preview when typing directly
+    document.getElementById('iconInput').addEventListener('input', function() {
+      const icon = this.value.trim();
+      if (icon) {
+        document.getElementById('iconPreview').className = icon + ' display-1';
+        currentSelectedIcon = icon;
+      }
+    });
+
+    // Load icons on page load (for faster access when modal opens)
+    window.addEventListener('load', function() {
+      setTimeout(loadAllIcons, 500);
+    });
   </script>
 </body>
 </html>

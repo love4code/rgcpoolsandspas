@@ -126,14 +126,21 @@
     color: var(--theme-primary) !important;
   }
 
+  /* Unified Background Color - Navbar, Hero (no image), and Footer all match */
   /* Navigation Theme */
   .navbar.theme-nav {
     background-color: var(--theme-primary) !important;
+    background: var(--theme-primary) !important;
   }
 
-  /* Hero Section Theme - Gradient variation of navbar color */
-  .hero-section.theme-hero {
-    background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%) !important;
+  /* Hero Section Theme - Solid navbar color when no image is selected */
+  /* Must match navbar exactly */
+  .hero-section.theme-hero,
+  div.hero-section.theme-hero,
+  body .hero-section.theme-hero {
+    background-color: var(--theme-primary) !important;
+    background-image: none !important;
+    background: var(--theme-primary) !important;
     color: var(--theme-button-text) !important;
   }
 
@@ -183,14 +190,14 @@
     color: var(--theme-button-text) !important;
   }
 
-  /* Link Theme */
+  /* Link Theme - But exclude footer links */
   a.theme-link,
-  a:not(.nav-link):not(.btn) {
+  a:not(.nav-link):not(.btn):not(footer a) {
     color: var(--theme-link) !important;
   }
 
   a.theme-link:hover,
-  a:not(.nav-link):not(.btn):hover {
+  a:not(.nav-link):not(.btn):not(footer a):hover {
     color: var(--theme-secondary) !important;
   }
 
@@ -211,13 +218,59 @@
     color: var(--theme-primary) !important;
   }
 
-  /* Footer Links */
-  footer a:not(.btn) {
-    color: var(--theme-link) !important;
+  /* Footer Theme - Match navbar background color exactly - Override Bootstrap bg-dark */
+  footer,
+  footer.bg-dark,
+  body footer,
+  body footer.bg-dark,
+  footer.bg-dark.text-light {
+    background-color: var(--theme-primary) !important;
+    background: var(--theme-primary) !important;
   }
 
-  footer a:not(.btn):hover {
-    color: var(--theme-secondary) !important;
+  /* FINAL UNIFIED RULE - Ensure Navbar, Hero (no image), and Footer all use same background */
+  .navbar.theme-nav,
+  .hero-section.theme-hero:not(.theme-hero-with-image),
+  footer.bg-dark {
+    background-color: var(--theme-primary) !important;
+    background: var(--theme-primary) !important;
+  }
+
+  /* Footer Links - All white with no decoration - Override all other link styles */
+  footer a,
+  footer a:link,
+  footer a:visited,
+  footer a:active,
+  footer a:not(.btn),
+  footer a.text-light,
+  body footer a {
+    color: #ffffff !important;
+    text-decoration: none !important;
+  }
+
+  footer a:hover,
+  footer a:focus {
+    color: rgba(255, 255, 255, 0.8) !important;
+    text-decoration: none !important;
+  }
+  
+  /* Footer Icons - Ensure all Bootstrap icons in footer are white and visible */
+  footer .bi,
+  footer i.bi,
+  footer a .bi,
+  footer a i.bi,
+  footer a i,
+  footer i,
+  body footer .bi,
+  body footer i {
+    color: #ffffff !important;
+  }
+  
+  footer a:hover .bi,
+  footer a:hover i.bi,
+  footer a:hover i,
+  footer a:hover .bi:hover {
+    color: rgba(255, 255, 255, 0.8) !important;
   }
 </style>
 

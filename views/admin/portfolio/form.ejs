@@ -60,15 +60,42 @@
               <div class="card mb-3">
                 <div class="card-body">
                   <h5>Featured Image</h5>
-                  <div id="featuredImagePreview">
+                  <div class="mb-3">
+                    <label class="form-label">Select from Media Library</label>
+                    <div class="dropdown w-100">
+                      <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="featuredImageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span id="featuredImageButtonText">
+                          <% if (item && item.featuredImage) { %>
+                            Selected: <%= item.featuredImage.title || item.featuredImage.originalName || 'Image' %>
+                          <% } else { %>
+                            Select an image
+                          <% } %>
+                        </span>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end p-3" id="featuredImageDropdownMenu" style="width: 400px; max-height: 400px; overflow-y: auto;">
+                        <li>
+                          <div class="text-center text-muted py-3">
+                            <div class="spinner-border spinner-border-sm" role="status">
+                              <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div class="mt-2">Loading images...</div>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                    <input type="hidden" id="featuredImageInput" name="featuredImage" value="<%= item && item.featuredImage ? item.featuredImage._id : '' %>">
+                  </div>
+                  <div id="featuredImagePreview" class="mt-3">
                     <% if (item && item.featuredImage) { %>
+                      <label class="form-label">Selected Image Preview</label>
                       <img src="/admin/media/image/<%= item.featuredImage._id %>/thumbnail" class="img-thumbnail mb-2" style="width: 100%;">
-                      <input type="hidden" name="featuredImage" value="<%= item.featuredImage._id %>">
                     <% } else { %>
-                      <input type="hidden" name="featuredImage" id="featuredImageInput">
+                      <label class="form-label">Selected Image Preview</label>
+                      <div class="text-muted text-center py-3 border rounded" style="background-color: #f8f9fa;">
+                        No image selected
+                      </div>
                     <% } %>
                   </div>
-                  <button type="button" class="btn btn-primary btn-sm w-100" onclick="selectMedia('featuredImage')">Select Image</button>
                 </div>
               </div>
               <div class="card mb-3">
@@ -111,6 +138,162 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     let currentMediaType = '';
+    let mediaList = [];
+
+    // Load media list on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      loadMediaList();
+      setupFeaturedImageDropdown();
+    });
+
+    function loadMediaList() {
+      fetch('/admin/media/list')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.media) {
+            mediaList = data.media;
+            populateFeaturedImageDropdown();
+          }
+        })
+        .catch(error => {
+          console.error('Error loading media list:', error);
+        });
+    }
+
+    function populateFeaturedImageDropdown() {
+      const dropdownMenu = document.getElementById('featuredImageDropdownMenu');
+      <% if (item && item.featuredImage) { %>
+      const currentValue = '<%= item.featuredImage._id %>';
+      <% } else { %>
+      const currentValue = '';
+      <% } %>
+      
+      if (mediaList.length === 0) {
+        dropdownMenu.innerHTML = '<li><div class="text-center text-muted py-3">No images available in media library</div></li>';
+        return;
+      }
+      
+      // Create grid of image thumbnails
+      dropdownMenu.innerHTML = '<li><div class="row g-2"></div></li>';
+      const grid = dropdownMenu.querySelector('.row');
+      
+      mediaList.forEach(media => {
+        const col = document.createElement('div');
+        col.className = 'col-6';
+        
+        const card = document.createElement('div');
+        card.className = 'card position-relative';
+        if (media._id === currentValue) {
+          card.classList.add('border-primary', 'border-2');
+        }
+        card.style.cursor = 'pointer';
+        card.onclick = (e) => {
+          e.stopPropagation();
+          selectFeaturedImage(media._id);
+          // Close dropdown
+          const dropdown = bootstrap.Dropdown.getInstance(document.getElementById('featuredImageDropdown'));
+          if (dropdown) dropdown.hide();
+        };
+        
+        const img = document.createElement('img');
+        img.src = `/admin/media/image/${media._id}/thumbnail`;
+        img.className = 'card-img-top';
+        img.style.height = '100px';
+        img.style.objectFit = 'cover';
+        img.alt = media.title || media.originalName || 'Image';
+        img.onerror = function() {
+          this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%23999"%3ENo Image%3C/text%3E%3C/svg%3E';
+        };
+        
+        const cardBody = document.createElement('div');
+        cardBody.className = 'card-body p-2';
+        
+        const title = document.createElement('p');
+        title.className = 'card-text small text-truncate mb-0';
+        title.textContent = media.title || media.originalName || 'Image';
+        title.style.fontSize = '0.75rem';
+        
+        cardBody.appendChild(title);
+        card.appendChild(img);
+        card.appendChild(cardBody);
+        
+        // Add checkmark for selected image
+        if (media._id === currentValue) {
+          const checkmark = document.createElement('div');
+          checkmark.className = 'position-absolute top-0 end-0 bg-primary text-white rounded-circle m-1';
+          checkmark.style.width = '24px';
+          checkmark.style.height = '24px';
+          checkmark.style.display = 'flex';
+          checkmark.style.alignItems = 'center';
+          checkmark.style.justifyContent = 'center';
+          checkmark.style.fontSize = '14px';
+          checkmark.innerHTML = '✓';
+          card.appendChild(checkmark);
+        }
+        
+        col.appendChild(card);
+        grid.appendChild(col);
+      });
+    }
+
+    function selectFeaturedImage(mediaId) {
+      const input = document.getElementById('featuredImageInput');
+      const preview = document.getElementById('featuredImagePreview');
+      const buttonText = document.getElementById('featuredImageButtonText');
+      
+      // Find the selected media item
+      const selectedMedia = mediaList.find(m => m._id === mediaId);
+      const mediaName = selectedMedia ? (selectedMedia.title || selectedMedia.originalName || 'Image') : 'Image';
+      
+      input.value = mediaId;
+      buttonText.textContent = `Selected: ${mediaName}`;
+      
+      // Update preview
+      fetch(`/admin/media/image/${mediaId}/thumbnail`)
+        .then(res => res.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          preview.innerHTML = `
+            <label class="form-label">Selected Image Preview</label>
+            <img src="${url}" class="img-thumbnail mb-2" style="width: 100%;">
+          `;
+          
+          // Update visual selection in dropdown grid
+          const dropdownMenu = document.getElementById('featuredImageDropdownMenu');
+          const cards = dropdownMenu.querySelectorAll('.card');
+          cards.forEach(card => {
+            card.classList.remove('border-primary', 'border-2');
+            const checkmark = card.querySelector('.position-absolute.top-0.end-0.bg-primary');
+            if (checkmark) checkmark.remove();
+          });
+          
+          // Find and highlight selected card
+          cards.forEach(card => {
+            const img = card.querySelector('img');
+            if (img && img.src.includes(mediaId)) {
+              card.classList.add('border-primary', 'border-2');
+              const checkmark = document.createElement('div');
+              checkmark.className = 'position-absolute top-0 end-0 bg-primary text-white rounded-circle m-1';
+              checkmark.style.width = '24px';
+              checkmark.style.height = '24px';
+              checkmark.style.display = 'flex';
+              checkmark.style.alignItems = 'center';
+              checkmark.style.justifyContent = 'center';
+              checkmark.style.fontSize = '14px';
+              checkmark.innerHTML = '✓';
+              card.appendChild(checkmark);
+            }
+          });
+        })
+        .catch(error => {
+          console.error('Error loading image preview:', error);
+        });
+    }
+
+    function setupFeaturedImageDropdown() {
+      // No longer needed - using click handlers on cards
+    }
+
     function selectMedia(type) {
       currentMediaType = type;
       fetch('/admin/media/modal').then(res => res.text()).then(html => {
@@ -120,11 +303,7 @@
     }
     function selectImage(mediaId) {
       if (currentMediaType === 'featuredImage') {
-        document.getElementById('featuredImageInput').value = mediaId;
-        fetch(`/admin/media/image/${mediaId}/thumbnail`).then(res => res.blob()).then(blob => {
-          const url = URL.createObjectURL(blob);
-          document.getElementById('featuredImagePreview').innerHTML = `<img src="${url}" class="img-thumbnail mb-2" style="width: 100%;"><input type="hidden" name="featuredImage" value="${mediaId}">`;
-        });
+        selectFeaturedImage(mediaId);
       } else {
         const imagesPreview = document.getElementById('imagesPreview');
         fetch(`/admin/media/image/${mediaId}/thumbnail`).then(res => res.blob()).then(blob => {

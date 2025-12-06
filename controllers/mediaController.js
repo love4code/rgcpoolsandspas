@@ -171,6 +171,20 @@ const getMediaModal = async (req, res) => {
   }
 };
 
+const getMediaList = async (req, res) => {
+  try {
+    const media = await Media.find()
+      .sort({ uploadedAt: -1 })
+      .select('_id originalName title alt')
+      .limit(100);
+
+    res.json({ success: true, media });
+  } catch (error) {
+    console.error('Get media list error:', error);
+    res.status(500).json({ error: 'Error loading media list' });
+  }
+};
+
 const updateMedia = async (req, res) => {
   try {
     const media = await Media.findById(req.params.id);
@@ -261,6 +275,7 @@ module.exports = {
   getMediaImage,
   deleteMedia,
   getMediaModal,
+  getMediaList,
   updateMedia,
   flipMedia
 };
