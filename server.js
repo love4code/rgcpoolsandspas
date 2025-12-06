@@ -33,21 +33,29 @@ const mongoUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017/rgcpoolan
 const isHeroku = !!process.env.DYNO;
 const isProduction = process.env.NODE_ENV === 'production' || isHeroku;
 
+// Session configuration - optimized for Heroku
+// On Heroku (HTTPS), we need secure cookies
+const useSecureCookies = isProduction && process.env.SESSION_SECURE !== 'false';
+
 const sessionConfig = {
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
+  rolling: true, // Reset expiration on every request
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
-    secure: isProduction, // Use secure cookies in production (Heroku uses HTTPS)
-    sameSite: 'lax' // Use 'lax' for compatibility
+    secure: useSecureCookies, // Use secure cookies in production (Heroku uses HTTPS)
+    sameSite: 'lax' // Use 'lax' for better compatibility - works with secure cookies on same domain
   },
   name: 'rgcpool.sid' // Custom session name to avoid conflicts
 };
 
 if (isHeroku) {
-  console.log('🌐 Running on Heroku - sessions configured for HTTPS');
+  console.log('🌐 Running on Heroku');
+  console.log('📋 Session config - secure:', sessionConfig.cookie.secure, 'sameSite:', sessionConfig.cookie.sameSite);
+  console.log('🔑 Session secret set:', !!process.env.SESSION_SECRET);
+  console.log('🔗 MongoDB URI set:', !!process.env.MONGODB_URI);
 }
 
 // Create MongoDB store with error handling

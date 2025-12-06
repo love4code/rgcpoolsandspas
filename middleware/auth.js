@@ -18,13 +18,18 @@ const requireAuth = async (req, res, next) => {
           return next();
         } else {
           console.warn('Admin not found for session adminId:', req.session.adminId);
-          req.session.destroy();
+          req.session.destroy(() => {
+            res.redirect('/admin/login');
+          });
+          return;
         }
       } catch (dbError) {
         console.error('Database error in auth middleware:', dbError.message);
       }
     } else {
-      console.log('No session or adminId in session');
+      if (process.env.DYNO) {
+        console.log('No session or adminId - Session ID:', req.sessionID, 'Session exists:', !!req.session);
+      }
     }
     res.redirect('/admin/login');
   } catch (error) {

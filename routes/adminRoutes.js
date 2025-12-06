@@ -12,6 +12,17 @@ const eventController = require('../controllers/eventController');
 const settingsController = require('../controllers/settingsController');
 const inquiryController = require('../controllers/inquiryController');
 
+// Debug route for session testing (remove in production)
+router.get('/test-session', (req, res) => {
+  res.json({
+    sessionExists: !!req.session,
+    sessionId: req.sessionID,
+    adminId: req.session.adminId || null,
+    isHeroku: !!process.env.DYNO,
+    cookie: req.headers.cookie
+  });
+});
+
 // Auth routes
 router.get('/login', adminController.getLogin);
 router.post('/login', adminController.postLogin);
