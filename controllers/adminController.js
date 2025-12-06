@@ -16,26 +16,45 @@ const getLogin = (req, res) => {
 };
 
 const postLogin = async (req, res) => {
+  // Force output - use console.error for immediate visibility
+  console.error('🔴 ==========================================');
+  console.error('🔴 LOGIN FUNCTION CALLED');
+  console.error('🔴 ==========================================');
+  console.log('=== LOGIN POST REQUEST RECEIVED ===');
+  console.log('Request body keys:', Object.keys(req.body || {}));
+  
   try {
     const { username, password } = req.body;
     
+    console.log('=== LOGIN REQUEST ===');
+    console.log('Username provided:', username || 'NOT PROVIDED');
+    console.log('Password provided:', password ? 'YES (hidden)' : 'NOT PROVIDED');
+    
     if (!username || !password) {
+      console.log('❌ Missing username or password');
       req.flash('error', 'Please provide both username and password');
       return res.redirect('/admin/login');
     }
 
+    console.log('🔍 Looking for admin with username:', username);
     const admin = await Admin.findOne({ username });
 
     if (!admin) {
+      console.log('❌ Admin not found with username:', username);
       req.flash('error', 'Invalid credentials');
       return res.redirect('/admin/login');
     }
 
+    console.log('✅ Admin found! ID:', admin._id.toString());
+    console.log('🔐 Checking password...');
     const isMatch = await admin.comparePassword(password);
     if (!isMatch) {
+      console.log('❌ Password does not match');
       req.flash('error', 'Invalid credentials');
       return res.redirect('/admin/login');
     }
+
+    console.log('✅✅✅ PASSWORD MATCHES! ✅✅✅');
 
     // Set session data
     req.session.adminId = admin._id.toString();
