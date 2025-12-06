@@ -28,8 +28,22 @@ const updateSettings = async (req, res) => {
     settings.companyPhone = req.body.companyPhone || '';
     settings.companyAddress = req.body.companyAddress || '';
     settings.heroImage = req.body.heroImage || null;
-    settings.theme = req.body.theme || 'blue-ocean';
+    settings.theme = req.body.theme || 'ocean-blue';
     settings.footerText = req.body.footerText || '';
+
+    // Handle custom theme colors
+    if (req.body.theme === 'custom') {
+      settings.customTheme = {
+        primaryColor: req.body.primaryColor || '#0066cc',
+        secondaryColor: req.body.secondaryColor || '#00aaff',
+        accentColor: req.body.accentColor || '#ff6b35',
+        textColor: req.body.textColor || '#333333',
+        buttonColor: req.body.buttonColor || '#0066cc',
+        buttonTextColor: req.body.buttonTextColor || '#ffffff',
+        linkColor: req.body.linkColor || '#0066cc',
+        backgroundColor: req.body.backgroundColor || '#ffffff'
+      };
+    }
 
     settings.socialMedia = {
       facebook: req.body.facebook || '',

@@ -29,10 +29,35 @@
           <% media.forEach(item => { %>
             <div class="col-md-3">
               <div class="card">
-                <img src="/admin/media/image/<%= item._id %>/thumbnail" class="card-img-top" alt="<%= item.originalName %>">
+                <img src="/admin/media/image/<%= item._id %>/thumbnail?t=<%= Date.now() %>" class="card-img-top" alt="<%= item.alt || item.originalName %>" id="img-<%= item._id %>">
                 <div class="card-body">
-                  <p class="card-text small text-truncate"><%= item.originalName %></p>
-                  <button class="btn btn-sm btn-danger" onclick="deleteMedia('<%= item._id %>')">Delete</button>
+                  <div class="mb-2">
+                    <input type="text" class="form-control form-control-sm mb-1" 
+                           id="title-<%= item._id %>" 
+                           placeholder="Title" 
+                           value="<%= item.title || '' %>"
+                           onblur="updateMedia('<%= item._id %>', 'title', this.value)">
+                    <input type="text" class="form-control form-control-sm" 
+                           id="alt-<%= item._id %>" 
+                           placeholder="Alt text" 
+                           value="<%= item.alt || '' %>"
+                           onblur="updateMedia('<%= item._id %>', 'alt', this.value)">
+                  </div>
+                  <div class="btn-group btn-group-sm w-100 mb-2" role="group">
+                    <button type="button" class="btn btn-outline-primary" 
+                            onclick="flipImage('<%= item._id %>', 'horizontal')" 
+                            title="Flip Horizontal">
+                      <i class="bi bi-arrow-left-right"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" 
+                            onclick="flipImage('<%= item._id %>', 'vertical')" 
+                            title="Flip Vertical">
+                      <i class="bi bi-arrow-up-down"></i>
+                    </button>
+                  </div>
+                  <button class="btn btn-sm btn-danger w-100" onclick="deleteMedia('<%= item._id %>')">
+                    <i class="bi bi-trash"></i> Delete
+                  </button>
                 </div>
               </div>
             </div>
@@ -101,6 +126,16 @@
           }
         });
 
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('Non-JSON response:', text);
+          alert('Upload error: Server returned an error page. Please check your authentication and try again.');
+          progressBar.style.display = 'none';
+          return;
+        }
+
         const result = await response.json();
         
         if (result.success) {
@@ -110,9 +145,60 @@
           }, 500);
         } else {
           alert('Upload failed: ' + (result.error || 'Unknown error'));
+          progressBar.style.display = 'none';
         }
       } catch (error) {
-        alert('Upload error: ' + error.message);
+        console.error('Upload error:', error);
+        alert('Upload error: ' + (error.message || 'Failed to upload images. Please try again.'));
+        progressBar.style.display = 'none';
+      }
+    }
+
+    async function updateMedia(id, field, value) {
+      try {
+        const response = await fetch(`/admin/media/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ [field]: value })
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+          alert('Update failed: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Update error:', error);
+        alert('Update error: ' + error.message);
+      }
+    }
+
+    async function flipImage(id, direction) {
+      try {
+        const response = await fetch(`/admin/media/${id}/flip`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ direction: direction })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          // Update image with cache busting
+          const img = document.getElementById(`img-${id}`);
+          if (img) {
+            img.src = `/admin/media/image/${id}/thumbnail?t=${Date.now()}`;
+          }
+        } else {
+          alert('Flip failed: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Flip error:', error);
+        alert('Flip error: ' + error.message);
       }
     }
 

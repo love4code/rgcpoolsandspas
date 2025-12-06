@@ -1,5 +1,5 @@
 const Media = require('../models/Media');
-const { upload, uploadSingle, uploadMultiple } = require('../middleware/upload');
+const { upload, uploadSingle, uploadMultiple, regenerateImagesWithFlip } = require('../middleware/upload');
 
 const getMediaLibrary = async (req, res) => {
   try {
@@ -30,16 +30,84 @@ const getMediaLibrary = async (req, res) => {
 
 const uploadMedia = async (req, res) => {
   try {
+    // Check if files were uploaded
     if (req.files && req.files.length > 0) {
-      await uploadMultiple(req, res);
+      // Handle multiple files
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: 'No files uploaded' });
+      }
+
+      const uploadedMedia = [];
+      const { processImage } = require('../middleware/upload');
+
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        
+        const progressCallback = (progress, message) => {
+          console.log(`File ${i + 1}/${req.files.length}: ${progress}% - ${message}`);
+        };
+
+        const processedImages = await processImage(file, progressCallback);
+
+        const media = new Media({
+          originalName: file.originalname,
+          mimeType: file.mimetype,
+          size: file.size,
+          large: processedImages.large,
+          medium: processedImages.medium,
+          thumbnail: processedImages.thumbnail
+        });
+
+        await media.save();
+        uploadedMedia.push({
+          id: media._id,
+          originalName: media.originalName,
+          mimeType: media.mimeType,
+          size: media.size
+        });
+      }
+
+      return res.json({
+        success: true,
+        count: uploadedMedia.length,
+        media: uploadedMedia
+      });
     } else if (req.file) {
-      await uploadSingle(req, res);
+      // Handle single file
+      const { processImage } = require('../middleware/upload');
+
+      const progressCallback = (progress, message) => {
+        console.log(`Upload progress: ${progress}% - ${message}`);
+      };
+
+      const processedImages = await processImage(req.file, progressCallback);
+
+      const media = new Media({
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        large: processedImages.large,
+        medium: processedImages.medium,
+        thumbnail: processedImages.thumbnail
+      });
+
+      await media.save();
+
+      return res.json({
+        success: true,
+        media: {
+          id: media._id,
+          originalName: media.originalName,
+          mimeType: media.mimeType,
+          size: media.size
+        }
+      });
     } else {
-      res.status(400).json({ error: 'No files uploaded' });
+      return res.status(400).json({ error: 'No files uploaded' });
     }
   } catch (error) {
     console.error('Upload error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message || 'Upload failed' });
   }
 };
 
@@ -53,6 +121,7 @@ const getMediaImage = async (req, res) => {
     const size = req.params.size || 'medium';
     let imageData, contentType;
 
+    // Get the appropriate size image data
     if (size === 'large' && media.large && media.large.data) {
       imageData = media.large.data;
       contentType = 'image/jpeg';
@@ -66,7 +135,10 @@ const getMediaImage = async (req, res) => {
       return res.status(404).send('Image not found');
     }
 
+    // Images are already processed with flips applied during upload/regeneration
+    // So we can serve them directly
     res.contentType(contentType);
+    res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
     res.send(imageData);
   } catch (error) {
     console.error('Get media error:', error);
@@ -99,11 +171,97 @@ const getMediaModal = async (req, res) => {
   }
 };
 
+const updateMedia = async (req, res) => {
+  try {
+    const media = await Media.findById(req.params.id);
+    if (!media) {
+      return res.status(404).json({ error: 'Media not found' });
+    }
+
+    // Update title and alt text
+    if (req.body.title !== undefined) {
+      media.title = req.body.title || '';
+    }
+    if (req.body.alt !== undefined) {
+      media.alt = req.body.alt || '';
+    }
+
+    await media.save();
+
+    res.json({
+      success: true,
+      media: {
+        id: media._id,
+        title: media.title,
+        alt: media.alt
+      }
+    });
+  } catch (error) {
+    console.error('Update media error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const flipMedia = async (req, res) => {
+  try {
+    const media = await Media.findById(req.params.id);
+    if (!media) {
+      return res.status(404).json({ error: 'Media not found' });
+    }
+
+    const flipHorizontal = req.body.flipHorizontal === 'true' || req.body.flipHorizontal === true;
+    const flipVertical = req.body.flipVertical === 'true' || req.body.flipVertical === true;
+
+    // Toggle flip states
+    if (req.body.direction === 'horizontal') {
+      media.flipHorizontal = !media.flipHorizontal;
+    } else if (req.body.direction === 'vertical') {
+      media.flipVertical = !media.flipVertical;
+    } else {
+      // Use provided values
+      if (req.body.flipHorizontal !== undefined) {
+        media.flipHorizontal = flipHorizontal;
+      }
+      if (req.body.flipVertical !== undefined) {
+        media.flipVertical = flipVertical;
+      }
+    }
+
+    // Regenerate images with new flip settings
+    const processedImages = await regenerateImagesWithFlip(
+      media,
+      media.flipHorizontal,
+      media.flipVertical
+    );
+
+    // Update image data
+    media.large = processedImages.large;
+    media.medium = processedImages.medium;
+    media.thumbnail = processedImages.thumbnail;
+
+    await media.save();
+
+    res.json({
+      success: true,
+      media: {
+        id: media._id,
+        flipHorizontal: media.flipHorizontal,
+        flipVertical: media.flipVertical
+      }
+    });
+  } catch (error) {
+    console.error('Flip media error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getMediaLibrary,
   uploadMedia,
   getMediaImage,
   deleteMedia,
-  getMediaModal
+  getMediaModal,
+  updateMedia,
+  flipMedia
 };
 

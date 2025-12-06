@@ -66,12 +66,83 @@
           <div class="card mb-3">
             <div class="card-header"><h5>Theme</h5></div>
             <div class="card-body">
-              <select class="form-select" name="theme">
-                <option value="blue-ocean" <%= settings.theme === 'blue-ocean' ? 'selected' : '' %>>Blue Ocean</option>
-                <option value="aqua-blue" <%= settings.theme === 'aqua-blue' ? 'selected' : '' %>>Aqua Blue</option>
-                <option value="deep-blue" <%= settings.theme === 'deep-blue' ? 'selected' : '' %>>Deep Blue</option>
-                <option value="tropical-blue" <%= settings.theme === 'tropical-blue' ? 'selected' : '' %>>Tropical Blue</option>
-              </select>
+              <div class="mb-3">
+                <label class="form-label">Theme Selection</label>
+                <select class="form-select" name="theme" id="themeSelect" onchange="toggleCustomTheme()">
+                  <option value="ocean-blue" <%= settings.theme === 'ocean-blue' ? 'selected' : '' %>>Ocean Blue (Default)</option>
+                  <option value="deep-blue" <%= settings.theme === 'deep-blue' ? 'selected' : '' %>>Deep Blue</option>
+                  <option value="sky-blue" <%= settings.theme === 'sky-blue' ? 'selected' : '' %>>Sky Blue</option>
+                  <option value="navy-blue" <%= settings.theme === 'navy-blue' ? 'selected' : '' %>>Navy Blue</option>
+                  <option value="aqua-blue" <%= settings.theme === 'aqua-blue' ? 'selected' : '' %>>Aqua Blue</option>
+                  <option value="light-blue" <%= settings.theme === 'light-blue' ? 'selected' : '' %>>Light Blue</option>
+                  <option value="royal-blue" <%= settings.theme === 'royal-blue' ? 'selected' : '' %>>Royal Blue</option>
+                  <option value="custom" <%= settings.theme === 'custom' ? 'selected' : '' %>>Custom Theme</option>
+                </select>
+              </div>
+              <div id="customThemeSection" style="display: <%= settings.theme === 'custom' ? 'block' : 'none' %>;">
+                <h6 class="mb-3">Custom Theme Colors</h6>
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Primary Color</label>
+                    <input type="color" class="form-control form-control-color" name="primaryColor" 
+                           value="<%= settings.customTheme && settings.customTheme.primaryColor ? settings.customTheme.primaryColor : '#0066cc' %>" 
+                           title="Primary color for navigation and main elements">
+                    <small class="text-muted">Navigation, headers, main elements</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Secondary Color</label>
+                    <input type="color" class="form-control form-control-color" name="secondaryColor" 
+                           value="<%= settings.customTheme && settings.customTheme.secondaryColor ? settings.customTheme.secondaryColor : '#00aaff' %>" 
+                           title="Secondary color for gradients and accents">
+                    <small class="text-muted">Gradients, accents, hero sections</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Accent Color</label>
+                    <input type="color" class="form-control form-control-color" name="accentColor" 
+                           value="<%= settings.customTheme && settings.customTheme.accentColor ? settings.customTheme.accentColor : '#ff6b35' %>" 
+                           title="Accent color for highlights">
+                    <small class="text-muted">Highlights, call-to-action elements</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Text Color</label>
+                    <input type="color" class="form-control form-control-color" name="textColor" 
+                           value="<%= settings.customTheme && settings.customTheme.textColor ? settings.customTheme.textColor : '#333333' %>" 
+                           title="Main text color">
+                    <small class="text-muted">Body text, headings</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Button Color</label>
+                    <input type="color" class="form-control form-control-color" name="buttonColor" 
+                           value="<%= settings.customTheme && settings.customTheme.buttonColor ? settings.customTheme.buttonColor : '#0066cc' %>" 
+                           title="Button background color">
+                    <small class="text-muted">Button backgrounds</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Button Text Color</label>
+                    <input type="color" class="form-control form-control-color" name="buttonTextColor" 
+                           value="<%= settings.customTheme && settings.customTheme.buttonTextColor ? settings.customTheme.buttonTextColor : '#ffffff' %>" 
+                           title="Button text color">
+                    <small class="text-muted">Text on buttons</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Link Color</label>
+                    <input type="color" class="form-control form-control-color" name="linkColor" 
+                           value="<%= settings.customTheme && settings.customTheme.linkColor ? settings.customTheme.linkColor : '#0066cc' %>" 
+                           title="Link color">
+                    <small class="text-muted">Hyperlinks, navigation links</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Background Color</label>
+                    <input type="color" class="form-control form-control-color" name="backgroundColor" 
+                           value="<%= settings.customTheme && settings.customTheme.backgroundColor ? settings.customTheme.backgroundColor : '#ffffff' %>" 
+                           title="Page background color">
+                    <small class="text-muted">Page background</small>
+                  </div>
+                </div>
+                <div class="alert alert-info">
+                  <strong>Tip:</strong> Use the color pickers to customize every aspect of your site's appearance. Changes will be applied immediately after saving.
+                </div>
+              </div>
             </div>
           </div>
 
@@ -147,6 +218,16 @@
           `;
         });
       bootstrap.Modal.getInstance(document.getElementById('mediaModal')).hide();
+    }
+    
+    function toggleCustomTheme() {
+      const themeSelect = document.getElementById('themeSelect');
+      const customSection = document.getElementById('customThemeSection');
+      if (themeSelect.value === 'custom') {
+        customSection.style.display = 'block';
+      } else {
+        customSection.style.display = 'none';
+      }
     }
   </script>
 </body>

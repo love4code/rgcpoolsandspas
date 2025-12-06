@@ -14,8 +14,6 @@
       min-height: 60vh;
       display: flex;
       align-items: center;
-      background: linear-gradient(135deg, #0066cc 0%, #00aaff 100%);
-      color: white;
     }
     .service-card {
       transition: transform 0.3s;
@@ -40,18 +38,9 @@
 </head>
 <body>
 <%- include('../partials/public-header', { settings }) %>
-<% 
-  const themeClasses = {
-    'blue-ocean': 'bg-primary',
-    'aqua-blue': 'bg-info',
-    'deep-blue': 'bg-dark',
-    'tropical-blue': 'bg-success'
-  };
-  const themeClass = settings && settings.theme ? themeClasses[settings.theme] || 'bg-primary' : 'bg-primary';
-%>
 
 <% if (heroImage) { %>
-  <div class="hero-section" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/admin/media/image/<%= heroImage._id %>/large'); background-size: cover; background-position: center;">
+  <div class="hero-section theme-hero-with-image" style="background-image: url('/admin/media/image/<%= heroImage._id %>/large'); background-size: cover; background-position: center;">
     <div class="container">
       <div class="row">
         <div class="col-lg-8 mx-auto text-center">
@@ -66,7 +55,7 @@
     </div>
   </div>
 <% } else { %>
-  <div class="hero-section <%= themeClass %>">
+  <div class="hero-section theme-hero">
     <div class="container">
       <div class="row">
         <div class="col-lg-8 mx-auto text-center">
@@ -127,7 +116,11 @@
               <% } %>
               <div class="card-body">
                 <h5 class="card-title"><%= item.title %></h5>
-                <a href="/portfolio/<%= item.slug %>" class="btn btn-primary btn-sm">View Details</a>
+                <% if (item.slug) { %>
+                  <a href="/portfolio/<%= item.slug %>" class="btn btn-primary btn-sm">View Details</a>
+                <% } else { %>
+                  <span class="text-muted">Details unavailable</span>
+                <% } %>
               </div>
             </div>
           </div>

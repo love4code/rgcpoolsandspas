@@ -59,18 +59,28 @@ const createPortfolio = async (req, res) => {
 
 const updatePortfolio = async (req, res) => {
   try {
-    const portfolioData = {
-      title: req.body.title,
-      description: req.body.description,
-      images: req.body.images ? (Array.isArray(req.body.images) ? req.body.images : [req.body.images]) : [],
-      featuredImage: req.body.featuredImage || null,
-      seoTitle: req.body.seoTitle,
-      seoDescription: req.body.seoDescription,
-      featured: req.body.featured === 'on',
-      active: req.body.active === 'on'
-    };
+    const item = await Portfolio.findById(req.params.id);
+    if (!item) {
+      req.flash('error', 'Portfolio item not found');
+      return res.redirect('/admin/portfolio');
+    }
 
-    await Portfolio.findByIdAndUpdate(req.params.id, portfolioData);
+    // Update fields
+    item.title = req.body.title;
+    item.description = req.body.description;
+    item.images = req.body.images ? (Array.isArray(req.body.images) ? req.body.images : [req.body.images]) : [];
+    item.featuredImage = req.body.featuredImage || null;
+    item.seoTitle = req.body.seoTitle;
+    item.seoDescription = req.body.seoDescription;
+    item.featured = req.body.featured === 'on';
+    item.active = req.body.active === 'on';
+
+    // Regenerate slug if title changed (pre-save hook will handle this)
+    if (item.isModified('title')) {
+      item.slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+
+    await item.save();
 
     req.flash('success', 'Portfolio item updated successfully');
     res.redirect('/admin/portfolio');

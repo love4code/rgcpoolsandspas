@@ -17,8 +17,42 @@ const settingsSchema = new mongoose.Schema({
   },
   theme: {
     type: String,
-    enum: ['blue-ocean', 'aqua-blue', 'deep-blue', 'tropical-blue'],
-    default: 'blue-ocean'
+    enum: ['ocean-blue', 'deep-blue', 'sky-blue', 'navy-blue', 'aqua-blue', 'light-blue', 'royal-blue', 'custom'],
+    default: 'ocean-blue'
+  },
+  customTheme: {
+    primaryColor: {
+      type: String,
+      default: '#0066cc'
+    },
+    secondaryColor: {
+      type: String,
+      default: '#00aaff'
+    },
+    accentColor: {
+      type: String,
+      default: '#ff6b35'
+    },
+    textColor: {
+      type: String,
+      default: '#333333'
+    },
+    buttonColor: {
+      type: String,
+      default: '#0066cc'
+    },
+    buttonTextColor: {
+      type: String,
+      default: '#ffffff'
+    },
+    linkColor: {
+      type: String,
+      default: '#0066cc'
+    },
+    backgroundColor: {
+      type: String,
+      default: '#ffffff'
+    }
   },
   socialMedia: {
     facebook: String,

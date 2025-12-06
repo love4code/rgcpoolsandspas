@@ -13,10 +13,27 @@ const getHome = async (req, res) => {
     const services = await Service.find({ active: true, featured: true })
       .sort({ displayOrder: 1 })
       .limit(3);
-    const portfolioItems = await Portfolio.find({ active: true, featured: true })
+    let portfolioItems = await Portfolio.find({ active: true, featured: true })
       .populate('featuredImage')
       .sort({ createdAt: -1 })
       .limit(4);
+    
+    // Ensure all portfolio items have slugs
+    for (let item of portfolioItems) {
+      if (!item.slug && item.title) {
+        item.slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        try {
+          await item.save();
+          console.log('Generated slug for portfolio item:', item.title, '->', item.slug);
+        } catch (error) {
+          console.error('Error saving portfolio item slug:', error);
+        }
+      }
+    }
+    
+    // Filter out items without slugs
+    portfolioItems = portfolioItems.filter(item => item.slug);
+    console.log('Home page - portfolio items with slugs:', portfolioItems.map(i => ({ title: i.title, slug: i.slug })));
     
     let heroImage = null;
     if (settings.heroImage) {
@@ -96,9 +113,24 @@ const getProductDetail = async (req, res) => {
 const getPortfolio = async (req, res) => {
   try {
     const settings = await Settings.getSettings();
-    const portfolioItems = await Portfolio.find({ active: true })
+    let portfolioItems = await Portfolio.find({ active: true })
       .populate('featuredImage')
       .sort({ createdAt: -1 });
+
+    // Ensure all portfolio items have slugs
+    for (let item of portfolioItems) {
+      if (!item.slug && item.title) {
+        item.slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        try {
+          await item.save();
+        } catch (error) {
+          console.error('Error saving portfolio item slug:', error);
+        }
+      }
+    }
+    
+    // Filter out items without slugs
+    portfolioItems = portfolioItems.filter(item => item.slug);
 
     res.render('public/portfolio/index', {
       settings,
@@ -113,21 +145,52 @@ const getPortfolio = async (req, res) => {
 const getPortfolioDetail = async (req, res) => {
   try {
     const settings = await Settings.getSettings();
-    const item = await Portfolio.findOne({ slug: req.params.slug, active: true })
+    
+    console.log('Portfolio detail request - slug:', req.params.slug, 'URL:', req.url);
+    
+    if (!req.params.slug || req.params.slug === 'undefined' || req.params.slug.trim() === '') {
+      console.log('Invalid slug provided');
+      return res.status(404).render('error', { message: 'Invalid portfolio item URL' });
+    }
+    
+    // Clean the slug (remove any extra characters)
+    const cleanSlug = req.params.slug.trim();
+    
+    // Try to find by slug
+    let item = await Portfolio.findOne({ slug: cleanSlug, active: true })
       .populate('images')
       .populate('featuredImage');
 
+    // If not found, try case-insensitive search
     if (!item) {
-      return res.status(404).render('error', { message: 'Portfolio item not found' });
+      console.log('Item not found with exact slug:', cleanSlug);
+      item = await Portfolio.findOne({ 
+        slug: { $regex: new RegExp(`^${cleanSlug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }, 
+        active: true 
+      })
+        .populate('images')
+        .populate('featuredImage');
     }
 
+    // If still not found, log all available items for debugging
+    if (!item) {
+      const allItems = await Portfolio.find({ active: true }).select('title slug active');
+      console.log('Available portfolio items:', allItems.map(i => ({ title: i.title, slug: i.slug, active: i.active })));
+      console.log('Requested slug:', cleanSlug);
+      return res.status(404).render('error', { 
+        message: `Portfolio item not found. Requested: "${cleanSlug}"` 
+      });
+    }
+
+    console.log('Found portfolio item:', item.title, 'with slug:', item.slug);
     res.render('public/portfolio/detail', {
       settings,
       item
     });
   } catch (error) {
     console.error('Portfolio detail error:', error);
-    res.status(500).render('error', { message: 'Error loading portfolio item' });
+    console.error('Error stack:', error.stack);
+    res.status(500).render('error', { message: 'Error loading portfolio item: ' + error.message });
   }
 };
 
@@ -137,13 +200,70 @@ const getCalendar = async (req, res) => {
     const events = await Event.find({ active: true })
       .sort({ startDate: 1 });
 
+    // Format events for FullCalendar
+    const calendarEvents = events.map(event => {
+      const eventData = {
+        id: event._id.toString(),
+        title: event.title,
+        allDay: event.allDay || false,
+        description: event.description || '',
+        location: event.location || '',
+        url: `/events/${event._id}`
+      };
+
+      // Format dates properly for FullCalendar
+      if (event.allDay) {
+        // For all-day events, use date-only format (YYYY-MM-DD)
+        eventData.start = event.startDate.toISOString().split('T')[0];
+        if (event.endDate) {
+          // Add one day to end date for all-day events (exclusive end)
+          const endDate = new Date(event.endDate);
+          endDate.setDate(endDate.getDate() + 1);
+          eventData.end = endDate.toISOString().split('T')[0];
+        }
+      } else {
+        // For timed events, use full ISO format
+        eventData.start = event.startDate.toISOString();
+        if (event.endDate) {
+          eventData.end = event.endDate.toISOString();
+        } else {
+          // If no end date, set end to start + 1 hour
+          const endDate = new Date(event.startDate);
+          endDate.setHours(endDate.getHours() + 1);
+          eventData.end = endDate.toISOString();
+        }
+      }
+
+      return eventData;
+    });
+
     res.render('public/calendar', {
       settings,
-      events
+      events: calendarEvents,
+      eventsList: events // Pass original events for list display
     });
   } catch (error) {
     console.error('Calendar error:', error);
     res.status(500).render('error', { message: 'Error loading calendar' });
+  }
+};
+
+const getEventDetail = async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    const event = await Event.findById(req.params.id);
+
+    if (!event || !event.active) {
+      return res.status(404).render('error', { message: 'Event not found' });
+    }
+
+    res.render('public/events/detail', {
+      settings,
+      event
+    });
+  } catch (error) {
+    console.error('Event detail error:', error);
+    res.status(500).render('error', { message: 'Error loading event' });
   }
 };
 
@@ -196,6 +316,7 @@ module.exports = {
   getPortfolio,
   getPortfolioDetail,
   getCalendar,
+  getEventDetail,
   submitInquiry
 };
 

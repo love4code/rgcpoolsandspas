@@ -39,8 +39,19 @@ router.get('/dashboard', requireAuth, adminController.getDashboard);
 
 // Media routes
 router.get('/media', requireAuth, mediaController.getMediaLibrary);
-router.post('/media/upload', requireAuth, upload.array('images', 10), mediaController.uploadMedia);
+router.post('/media/upload', requireAuth, (req, res, next) => {
+  upload.array('images', 10)(req, res, (err) => {
+    if (err) {
+      // Multer error - return JSON for API requests
+      console.error('Multer error:', err);
+      return res.status(400).json({ error: err.message || 'File upload error' });
+    }
+    next();
+  });
+}, mediaController.uploadMedia);
 router.get('/media/image/:id/:size?', mediaController.getMediaImage);
+router.put('/media/:id', requireAuth, mediaController.updateMedia);
+router.post('/media/:id/flip', requireAuth, mediaController.flipMedia);
 router.delete('/media/:id', requireAuth, mediaController.deleteMedia);
 router.get('/media/modal', requireAuth, mediaController.getMediaModal);
 

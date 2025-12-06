@@ -21,6 +21,7 @@
           <li><a href="/products" class="text-light text-decoration-none">Products</a></li>
           <li><a href="/portfolio" class="text-light text-decoration-none">Portfolio</a></li>
           <li><a href="/contact" class="text-light text-decoration-none">Contact</a></li>
+          <li><a href="/admin/login" class="text-light text-decoration-none">Admin</a></li>
         </ul>
       </div>
       <div class="col-md-4 mb-4">
@@ -50,7 +51,20 @@
           &copy; <%= new Date().getFullYear() %> <%= settings && settings.companyName ? settings.companyName : 'RGC Pool and Spa' %>. All rights reserved.
         <% } %>
       </p>
+      <p class="mb-0 mt-2" id="affiliate-text"></p>
     </div>
   </div>
 </footer>
+
+<script>
+  // Add affiliate text to footer
+  (function() {
+    document.addEventListener('DOMContentLoaded', function() {
+      const affiliateTextElement = document.getElementById('affiliate-text');
+      if (affiliateTextElement) {
+        affiliateTextElement.textContent = 'Affiliate of Aquarian Pool and Spa';
+      }
+    });
+  })();
+</script>
 

@@ -36,7 +36,11 @@
             <div class="card-body d-flex flex-column">
               <h5 class="card-title"><%= item.title %></h5>
               <p class="card-text flex-grow-1"><%= item.description.length > 100 ? item.description.substring(0, 100) + '...' : item.description %></p>
-              <a href="/portfolio/<%= item.slug %>" class="btn btn-primary">View Project</a>
+              <% if (item.slug) { %>
+                <a href="/portfolio/<%= item.slug %>" class="btn btn-primary">View Project</a>
+              <% } else { %>
+                <span class="text-muted">Details unavailable</span>
+              <% } %>
             </div>
           </div>
         </div>

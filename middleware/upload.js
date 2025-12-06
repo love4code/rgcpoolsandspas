@@ -21,23 +21,36 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-// Process and resize images
-const processImage = async (file, progressCallback) => {
+// Process and resize images with optional flip
+const processImage = async (file, progressCallback, flipHorizontal = false, flipVertical = false) => {
   try {
     progressCallback(10, 'Reading image...');
     
-    const metadata = await sharp(file.buffer).metadata();
+    let imageProcessor = sharp(file.buffer);
+    
+    // Apply flips if needed
+    if (flipHorizontal) {
+      imageProcessor = imageProcessor.flop(); // Horizontal flip
+    }
+    if (flipVertical) {
+      imageProcessor = imageProcessor.flip(); // Vertical flip
+    }
+    
+    const metadata = await imageProcessor.metadata();
     const originalWidth = metadata.width;
     const originalHeight = metadata.height;
 
     progressCallback(30, 'Generating large size...');
     // Large: max 1920px on longest side
     const largeSize = Math.max(originalWidth, originalHeight) > 1920 ? 1920 : null;
-    const largeBuffer = await sharp(file.buffer)
-      .resize(largeSize, largeSize, {
+    let largeProcessor = imageProcessor.clone();
+    if (largeSize) {
+      largeProcessor = largeProcessor.resize(largeSize, largeSize, {
         fit: 'inside',
         withoutEnlargement: true
-      })
+      });
+    }
+    const largeBuffer = await largeProcessor
       .jpeg({ quality: 85, mozjpeg: true })
       .toBuffer();
     
@@ -46,11 +59,14 @@ const processImage = async (file, progressCallback) => {
     
     // Medium: max 800px on longest side
     const mediumSize = Math.max(originalWidth, originalHeight) > 800 ? 800 : null;
-    const mediumBuffer = await sharp(file.buffer)
-      .resize(mediumSize, mediumSize, {
+    let mediumProcessor = imageProcessor.clone();
+    if (mediumSize) {
+      mediumProcessor = mediumProcessor.resize(mediumSize, mediumSize, {
         fit: 'inside',
         withoutEnlargement: true
-      })
+      });
+    }
+    const mediumBuffer = await mediumProcessor
       .jpeg({ quality: 80, mozjpeg: true })
       .toBuffer();
     
@@ -58,7 +74,8 @@ const processImage = async (file, progressCallback) => {
     progressCallback(70, 'Generating thumbnail...');
     
     // Thumbnail: 300x300 cropped
-    const thumbnailBuffer = await sharp(file.buffer)
+    const thumbnailBuffer = await imageProcessor
+      .clone()
       .resize(300, 300, {
         fit: 'cover'
       })
@@ -87,6 +104,91 @@ const processImage = async (file, progressCallback) => {
     };
   } catch (error) {
     console.error('Image processing error:', error);
+    throw error;
+  }
+};
+
+// Regenerate images with flip applied (for existing media)
+const regenerateImagesWithFlip = async (media, flipHorizontal, flipVertical) => {
+  try {
+    // Use the large image as source (highest quality)
+    const sourceBuffer = media.large.data;
+    
+    let imageProcessor = sharp(sourceBuffer);
+    
+    // Apply flips
+    if (flipHorizontal) {
+      imageProcessor = imageProcessor.flop();
+    }
+    if (flipVertical) {
+      imageProcessor = imageProcessor.flip();
+    }
+    
+    // Regenerate all sizes
+    const metadata = await imageProcessor.metadata();
+    const originalWidth = metadata.width;
+    const originalHeight = metadata.height;
+    
+    // Large: max 1920px
+    const largeSize = Math.max(originalWidth, originalHeight) > 1920 ? 1920 : null;
+    let largeProcessor = imageProcessor.clone();
+    if (largeSize) {
+      largeProcessor = largeProcessor.resize(largeSize, largeSize, {
+        fit: 'inside',
+        withoutEnlargement: true
+      });
+    }
+    const largeBuffer = await largeProcessor
+      .jpeg({ quality: 85, mozjpeg: true })
+      .toBuffer();
+    
+    const largeMetadata = await sharp(largeBuffer).metadata();
+    
+    // Medium: max 800px
+    const mediumSize = Math.max(originalWidth, originalHeight) > 800 ? 800 : null;
+    let mediumProcessor = imageProcessor.clone();
+    if (mediumSize) {
+      mediumProcessor = mediumProcessor.resize(mediumSize, mediumSize, {
+        fit: 'inside',
+        withoutEnlargement: true
+      });
+    }
+    const mediumBuffer = await mediumProcessor
+      .jpeg({ quality: 80, mozjpeg: true })
+      .toBuffer();
+    
+    const mediumMetadata = await sharp(mediumBuffer).metadata();
+    
+    // Thumbnail: 300x300
+    const thumbnailBuffer = await imageProcessor
+      .clone()
+      .resize(300, 300, {
+        fit: 'cover'
+      })
+      .jpeg({ quality: 75, mozjpeg: true })
+      .toBuffer();
+    
+    const thumbnailMetadata = await sharp(thumbnailBuffer).metadata();
+    
+    return {
+      large: {
+        data: largeBuffer,
+        width: largeMetadata.width,
+        height: largeMetadata.height
+      },
+      medium: {
+        data: mediumBuffer,
+        width: mediumMetadata.width,
+        height: mediumMetadata.height
+      },
+      thumbnail: {
+        data: thumbnailBuffer,
+        width: thumbnailMetadata.width,
+        height: thumbnailMetadata.height
+      }
+    };
+  } catch (error) {
+    console.error('Image regeneration error:', error);
     throw error;
   }
 };
@@ -182,6 +284,7 @@ module.exports = {
   upload,
   processImage,
   uploadSingle,
-  uploadMultiple
+  uploadMultiple,
+  regenerateImagesWithFlip
 };
 

@@ -28,8 +28,17 @@ const mediaSchema = new mongoose.Schema({
     width: Number,
     height: Number
   },
+  title: String,
   alt: String,
   caption: String,
+  flipHorizontal: {
+    type: Boolean,
+    default: false
+  },
+  flipVertical: {
+    type: Boolean,
+    default: false
+  },
   uploadedAt: {
     type: Date,
     default: Date.now
