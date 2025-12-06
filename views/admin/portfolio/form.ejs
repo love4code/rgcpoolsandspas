@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= item ? 'Edit' : 'New' %> Portfolio - Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar vh-100 position-fixed">
+        <div class="position-sticky pt-3">
+          <h5 class="text-light px-3 mb-3">Admin Panel</h5>
+          <%- include('../../partials/admin-sidebar', { inquiryCount: 0 }) %>
+        </div>
+      </nav>
+      
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" style="margin-left: 16.666667% !important;">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2"><%= item ? 'Edit' : 'New' %> Portfolio Item</h1>
+          <a href="/admin/portfolio" class="btn btn-secondary">Back</a>
+        </div>
+
+        <form action="<%= item ? `/admin/portfolio/${item._id}` : '/admin/portfolio' %>" method="POST">
+          <div class="row">
+            <div class="col-md-8">
+              <div class="card mb-3">
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label class="form-label">Title *</label>
+                    <input type="text" class="form-control" name="title" value="<%= item ? item.title : '' %>" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Description *</label>
+                    <textarea class="form-control" name="description" rows="5" required><%= item ? item.description : '' %></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">SEO Title</label>
+                    <input type="text" class="form-control" name="seoTitle" value="<%= item ? item.seoTitle || '' : '' %>">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">SEO Description</label>
+                    <textarea class="form-control" name="seoDescription" rows="3"><%= item ? item.seoDescription || '' : '' %></textarea>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="featured" <%= item && item.featured ? 'checked' : '' %>>
+                    <label class="form-check-label">Featured on Home Page</label>
+                  </div>
+                  <% if (item) { %>
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="active" <%= item.active ? 'checked' : '' %>>
+                      <label class="form-check-label">Active</label>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card mb-3">
+                <div class="card-body">
+                  <h5>Featured Image</h5>
+                  <div id="featuredImagePreview">
+                    <% if (item && item.featuredImage) { %>
+                      <img src="/admin/media/image/<%= item.featuredImage._id %>/thumbnail" class="img-thumbnail mb-2" style="width: 100%;">
+                      <input type="hidden" name="featuredImage" value="<%= item.featuredImage._id %>">
+                    <% } else { %>
+                      <input type="hidden" name="featuredImage" id="featuredImageInput">
+                    <% } %>
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm w-100" onclick="selectMedia('featuredImage')">Select Image</button>
+                </div>
+              </div>
+              <div class="card mb-3">
+                <div class="card-body">
+                  <h5>Project Images</h5>
+                  <div id="imagesPreview" class="mb-2">
+                    <% if (item && item.images && item.images.length > 0) { %>
+                      <% item.images.forEach(image => { %>
+                        <div class="position-relative d-inline-block me-2 mb-2">
+                          <img src="/admin/media/image/<%= image._id %>/thumbnail" class="img-thumbnail" style="width: 100px;">
+                          <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0" onclick="removeImage('<%= image._id %>')">×</button>
+                          <input type="hidden" name="images" value="<%= image._id %>">
+                        </div>
+                      <% }); %>
+                    <% } %>
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm w-100" onclick="selectMedia('images')">Add Images</button>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-success w-100">Save</button>
+            </div>
+          </div>
+        </form>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal fade" id="mediaModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Select Media</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="mediaModalBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let currentMediaType = '';
+    function selectMedia(type) {
+      currentMediaType = type;
+      fetch('/admin/media/modal').then(res => res.text()).then(html => {
+        document.getElementById('mediaModalBody').innerHTML = html;
+        new bootstrap.Modal(document.getElementById('mediaModal')).show();
+      });
+    }
+    function selectImage(mediaId) {
+      if (currentMediaType === 'featuredImage') {
+        document.getElementById('featuredImageInput').value = mediaId;
+        fetch(`/admin/media/image/${mediaId}/thumbnail`).then(res => res.blob()).then(blob => {
+          const url = URL.createObjectURL(blob);
+          document.getElementById('featuredImagePreview').innerHTML = `<img src="${url}" class="img-thumbnail mb-2" style="width: 100%;"><input type="hidden" name="featuredImage" value="${mediaId}">`;
+        });
+      } else {
+        const imagesPreview = document.getElementById('imagesPreview');
+        fetch(`/admin/media/image/${mediaId}/thumbnail`).then(res => res.blob()).then(blob => {
+          const url = URL.createObjectURL(blob);
+          const div = document.createElement('div');
+          div.className = 'position-relative d-inline-block me-2 mb-2';
+          div.innerHTML = `<img src="${url}" class="img-thumbnail" style="width: 100px;"><button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0" onclick="removeImage('${mediaId}')">×</button><input type="hidden" name="images" value="${mediaId}">`;
+          imagesPreview.appendChild(div);
+        });
+      }
+      bootstrap.Modal.getInstance(document.getElementById('mediaModal')).hide();
+    }
+    function removeImage(mediaId) {
+      document.getElementById('imagesPreview').querySelectorAll('div').forEach(div => {
+        if (div.querySelector(`input[value="${mediaId}"]`)) div.remove();
+      });
+    }
+  </script>
+</body>
+</html>
+

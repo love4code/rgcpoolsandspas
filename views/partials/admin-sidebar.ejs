@@ -1,0 +1,17 @@
+<div class="list-group">
+  <a href="/admin/dashboard" class="list-group-item list-group-item-action">Dashboard</a>
+  <a href="/admin/media" class="list-group-item list-group-item-action">Media Library</a>
+  <a href="/admin/products" class="list-group-item list-group-item-action">Products</a>
+  <a href="/admin/portfolio" class="list-group-item list-group-item-action">Portfolio</a>
+  <a href="/admin/services" class="list-group-item list-group-item-action">Services</a>
+  <a href="/admin/events" class="list-group-item list-group-item-action">Events</a>
+  <a href="/admin/inquiries" class="list-group-item list-group-item-action">
+    Recent Inquiries
+    <% if (typeof inquiryCount !== 'undefined' && inquiryCount > 0) { %>
+      <span class="badge bg-danger rounded-pill float-end"><%= inquiryCount %></span>
+    <% } %>
+  </a>
+  <a href="/admin/settings" class="list-group-item list-group-item-action">Settings</a>
+  <a href="/admin/logout" class="list-group-item list-group-item-action text-danger">Logout</a>
+</div>
+

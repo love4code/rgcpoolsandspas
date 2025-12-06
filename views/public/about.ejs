@@ -1,0 +1,32 @@
+<%- include('../partials/public-header', { settings }) %>
+
+<div class="container my-5">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <h1 class="display-4 mb-4">About <%= settings.companyName || 'RGC Pool and Spa' %></h1>
+      <p class="lead">We are dedicated to providing exceptional pool and spa services to our customers.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+      
+      <% if (settings.companyAddress || settings.companyPhone || settings.companyEmail) { %>
+        <div class="card mt-4">
+          <div class="card-body">
+            <h5 class="card-title">Contact Information</h5>
+            <% if (settings.companyAddress) { %>
+              <p class="mb-1"><strong>Address:</strong> <%= settings.companyAddress %></p>
+            <% } %>
+            <% if (settings.companyPhone) { %>
+              <p class="mb-1"><strong>Phone:</strong> <a href="tel:<%= settings.companyPhone %>"><%= settings.companyPhone %></a></p>
+            <% } %>
+            <% if (settings.companyEmail) { %>
+              <p class="mb-0"><strong>Email:</strong> <a href="mailto:<%= settings.companyEmail %>"><%= settings.companyEmail %></a></p>
+            <% } %>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/public-footer', { settings }) %>
+

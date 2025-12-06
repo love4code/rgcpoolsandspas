@@ -1,0 +1,42 @@
+<%- include('../partials/public-header', { settings }) %>
+
+<div class="container my-5">
+  <h1 class="display-4 mb-5 text-center">Events Calendar</h1>
+  
+  <% if (events && events.length > 0) { %>
+    <div class="row">
+      <div class="col-lg-8 mx-auto">
+        <div class="list-group">
+          <% events.forEach(event => { %>
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1"><%= event.title %></h5>
+                <small><%= new Date(event.startDate).toLocaleDateString() %></small>
+              </div>
+              <% if (event.description) { %>
+                <p class="mb-1"><%= event.description %></p>
+              <% } %>
+              <% if (event.location) { %>
+                <small><i class="bi bi-geo-alt"></i> <%= event.location %></small>
+              <% } %>
+              <% if (!event.allDay && event.endDate) { %>
+                <small class="d-block mt-1">
+                  <i class="bi bi-clock"></i> 
+                  <%= new Date(event.startDate).toLocaleTimeString() %> - 
+                  <%= new Date(event.endDate).toLocaleTimeString() %>
+                </small>
+              <% } %>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="alert alert-info text-center">
+      <p class="mb-0">No upcoming events scheduled at this time. Please check back later.</p>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../partials/public-footer', { settings }) %>
+

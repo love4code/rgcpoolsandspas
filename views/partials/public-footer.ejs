@@ -1,0 +1,56 @@
+<footer class="bg-dark text-light py-5 mt-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4 mb-4">
+        <h5><%= settings && settings.companyName ? settings.companyName : 'RGC Pool and Spa' %></h5>
+        <% if (settings && settings.companyAddress) { %>
+          <p class="mb-1"><%= settings.companyAddress %></p>
+        <% } %>
+        <% if (settings && settings.companyPhone) { %>
+          <p class="mb-1">Phone: <a href="tel:<%= settings.companyPhone %>" class="text-light"><%= settings.companyPhone %></a></p>
+        <% } %>
+        <% if (settings && settings.companyEmail) { %>
+          <p class="mb-0">Email: <a href="mailto:<%= settings.companyEmail %>" class="text-light"><%= settings.companyEmail %></a></p>
+        <% } %>
+      </div>
+      <div class="col-md-4 mb-4">
+        <h5>Quick Links</h5>
+        <ul class="list-unstyled">
+          <li><a href="/" class="text-light text-decoration-none">Home</a></li>
+          <li><a href="/about" class="text-light text-decoration-none">About</a></li>
+          <li><a href="/products" class="text-light text-decoration-none">Products</a></li>
+          <li><a href="/portfolio" class="text-light text-decoration-none">Portfolio</a></li>
+          <li><a href="/contact" class="text-light text-decoration-none">Contact</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4 mb-4">
+        <h5>Follow Us</h5>
+        <div class="d-flex gap-3">
+          <% if (settings && settings.socialMedia && settings.socialMedia.facebook) { %>
+            <a href="<%= settings.socialMedia.facebook %>" target="_blank" class="text-light fs-4"><i class="bi bi-facebook"></i></a>
+          <% } %>
+          <% if (settings && settings.socialMedia && settings.socialMedia.instagram) { %>
+            <a href="<%= settings.socialMedia.instagram %>" target="_blank" class="text-light fs-4"><i class="bi bi-instagram"></i></a>
+          <% } %>
+          <% if (settings && settings.socialMedia && settings.socialMedia.twitter) { %>
+            <a href="<%= settings.socialMedia.twitter %>" target="_blank" class="text-light fs-4"><i class="bi bi-twitter"></i></a>
+          <% } %>
+          <% if (settings && settings.socialMedia && settings.socialMedia.youtube) { %>
+            <a href="<%= settings.socialMedia.youtube %>" target="_blank" class="text-light fs-4"><i class="bi bi-youtube"></i></a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <hr class="my-4">
+    <div class="text-center">
+      <p class="mb-0">
+        <% if (settings && settings.footerText) { %>
+          <%= settings.footerText %>
+        <% } else { %>
+          &copy; <%= new Date().getFullYear() %> <%= settings && settings.companyName ? settings.companyName : 'RGC Pool and Spa' %>. All rights reserved.
+        <% } %>
+      </p>
+    </div>
+  </div>
+</footer>
+

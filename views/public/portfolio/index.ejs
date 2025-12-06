@@ -1,0 +1,31 @@
+<%- include('../../partials/public-header', { settings }) %>
+
+<div class="container my-5">
+  <h1 class="display-4 mb-5 text-center">Our Portfolio</h1>
+  
+  <% if (portfolioItems && portfolioItems.length > 0) { %>
+    <div class="row g-4">
+      <% portfolioItems.forEach(item => { %>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm portfolio-card">
+            <% if (item.featuredImage) { %>
+              <img src="/admin/media/image/<%= item.featuredImage._id %>/medium" class="card-img-top" alt="<%= item.title %>" style="height: 250px; object-fit: cover;">
+            <% } %>
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title"><%= item.title %></h5>
+              <p class="card-text flex-grow-1"><%= item.description.length > 100 ? item.description.substring(0, 100) + '...' : item.description %></p>
+              <a href="/portfolio/<%= item.slug %>" class="btn btn-primary">View Project</a>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <div class="alert alert-info text-center">
+      <p class="mb-0">No portfolio items available at this time. Please check back later.</p>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../../partials/public-footer', { settings }) %>
+

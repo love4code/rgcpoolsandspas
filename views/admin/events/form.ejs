@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= event ? 'Edit' : 'New' %> Event - Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar vh-100 position-fixed">
+        <div class="position-sticky pt-3">
+          <h5 class="text-light px-3 mb-3">Admin Panel</h5>
+          <%- include('../../partials/admin-sidebar', { inquiryCount: 0 }) %>
+        </div>
+      </nav>
+      
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" style="margin-left: 16.666667% !important;">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2"><%= event ? 'Edit' : 'New' %> Event</h1>
+          <a href="/admin/events" class="btn btn-secondary">Back</a>
+        </div>
+
+        <form action="<%= event ? `/admin/events/${event._id}` : '/admin/events' %>" method="POST">
+          <div class="card">
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label">Title *</label>
+                <input type="text" class="form-control" name="title" value="<%= event ? event.title : '' %>" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea class="form-control" name="description" rows="3"><%= event ? event.description || '' : '' %></textarea>
+              </div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Start Date *</label>
+                  <input type="datetime-local" class="form-control" name="startDate" value="<%= event && event.startDateFormatted ? event.startDateFormatted : '' %>" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">End Date</label>
+                  <input type="datetime-local" class="form-control" name="endDate" value="<%= event && event.endDateFormatted ? event.endDateFormatted : '' %>">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Location</label>
+                  <input type="text" class="form-control" name="location" value="<%= event ? event.location || '' : '' %>">
+                </div>
+                <div class="col-md-6">
+                  <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" name="allDay" <%= event && event.allDay ? 'checked' : 'checked' %>>
+                    <label class="form-check-label">All Day Event</label>
+                  </div>
+                </div>
+              </div>
+              <% if (event) { %>
+                <div class="form-check mt-3">
+                  <input class="form-check-input" type="checkbox" name="active" <%= event.active ? 'checked' : '' %>>
+                  <label class="form-check-label">Active</label>
+                </div>
+              <% } %>
+              <button type="submit" class="btn btn-success mt-3">Save Event</button>
+            </div>
+          </div>
+        </form>
+      </main>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

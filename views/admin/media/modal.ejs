@@ -1,0 +1,19 @@
+<div class="row g-3">
+  <% if (media && media.length > 0) { %>
+    <% media.forEach(item => { %>
+      <div class="col-md-2">
+        <div class="card">
+          <img src="/admin/media/image/<%= item._id %>/thumbnail" class="card-img-top" alt="<%= item.originalName %>" style="cursor: pointer;" onclick="selectImage('<%= item._id %>')">
+          <div class="card-body p-2">
+            <p class="card-text small text-truncate mb-0"><%= item.originalName %></p>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+  <% } else { %>
+    <div class="col-12">
+      <p class="text-muted text-center">No media available. Please upload images first.</p>
+    </div>
+  <% } %>
+</div>
+

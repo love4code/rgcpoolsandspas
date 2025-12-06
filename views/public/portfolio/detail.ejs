@@ -1,0 +1,30 @@
+<%- include('../../../partials/public-header', { settings }) %>
+
+<div class="container my-5">
+  <h1 class="display-4 mb-4"><%= item.title %></h1>
+  
+  <% if (item.featuredImage) { %>
+    <img src="/admin/media/image/<%= item.featuredImage._id %>/large" class="img-fluid rounded mb-4" alt="<%= item.title %>">
+  <% } %>
+
+  <div class="mb-4">
+    <p><%= item.description %></p>
+  </div>
+
+  <% if (item.images && item.images.length > 0) { %>
+    <div class="row g-3 mb-5">
+      <% item.images.forEach(image => { %>
+        <div class="col-md-4">
+          <img src="/admin/media/image/<%= image._id %>/medium" class="img-fluid rounded" alt="<%= item.title %>">
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+
+  <div class="text-center">
+    <a href="/portfolio" class="btn btn-primary">Back to Portfolio</a>
+  </div>
+</div>
+
+<%- include('../../../partials/public-footer', { settings }) %>
+

@@ -1,0 +1,111 @@
+<%- include('../../../partials/public-header', { settings }) %>
+
+<div class="container my-5">
+  <div class="row">
+    <div class="col-lg-8">
+      <h1 class="display-4 mb-4"><%= product.name %></h1>
+      
+      <% if (product.featuredImage) { %>
+        <img src="/admin/media/image/<%= product.featuredImage._id %>/large" class="img-fluid rounded mb-4" alt="<%= product.name %>">
+      <% } %>
+
+      <% if (product.images && product.images.length > 0) { %>
+        <div class="row g-2 mb-4">
+          <% product.images.forEach(image => { %>
+            <div class="col-md-3">
+              <img src="/admin/media/image/<%= image._id %>/medium" class="img-fluid rounded" alt="<%= product.name %>">
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+
+      <div class="mb-4">
+        <h3>Description</h3>
+        <p><%= product.description %></p>
+      </div>
+
+      <% if (product.sizes && product.sizes.length > 0) { %>
+        <div class="mb-4">
+          <h3>Available Sizes</h3>
+          <ul class="list-group">
+            <% product.sizes.forEach(size => { %>
+              <li class="list-group-item"><%= size.label %> - <%= size.value %></li>
+            <% }); %>
+          </ul>
+        </div>
+      <% } %>
+    </div>
+
+    <% if (product.showContactForm) { %>
+      <div class="col-lg-4">
+        <div class="contact-form">
+          <h3 class="mb-4">Request Information</h3>
+          <% if (typeof success !== 'undefined' && success.length > 0) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <%= success[0] %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          <% } %>
+          <% if (typeof error !== 'undefined' && error.length > 0) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <%= error[0] %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          <% } %>
+
+          <form action="/inquiry" method="POST">
+            <input type="hidden" name="source" value="product">
+            <input type="hidden" name="productId" value="<%= product._id %>">
+            <div class="mb-3">
+              <label for="name" class="form-label">Name *</label>
+              <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            <div class="mb-3">
+              <label for="town" class="form-label">Town</label>
+              <input type="text" class="form-control" id="town" name="town">
+            </div>
+            <div class="mb-3">
+              <label for="phone" class="form-label">Phone Number</label>
+              <input type="tel" class="form-control" id="phone" name="phone">
+            </div>
+            <div class="mb-3">
+              <label for="email" class="form-label">Email Address *</label>
+              <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <div class="mb-3">
+              <label for="service" class="form-label">Service *</label>
+              <select class="form-select" id="service" name="service" required>
+                <option value="">Select a service</option>
+                <option value="New Above Ground Pool">New Above Ground Pool</option>
+                <option value="Liner Replacement">Liner Replacement</option>
+                <option value="Pool Install">Pool Install</option>
+                <option value="Service Call">Service Call</option>
+              </select>
+            </div>
+            <% if (product.sizes && product.sizes.length > 0) { %>
+              <div class="mb-3">
+                <label class="form-label">Pool Sizes (Select Multiple)</label>
+                <% product.sizes.forEach(size => { %>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="selectedSizes" value="<%= size.label %> - <%= size.value %>" id="size<%= size._id || size.label.replace(/\s+/g, '') %>">
+                    <label class="form-check-label" for="size<%= size._id || size.label.replace(/\s+/g, '') %>">
+                      <%= size.label %> - <%= size.value %>
+                    </label>
+                  </div>
+                <% }); %>
+              </div>
+            <% } %>
+            <div class="mb-3">
+              <label for="message" class="form-label">Message</label>
+              <textarea class="form-control" id="message" name="message" rows="4"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Submit Inquiry</button>
+          </form>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../../../partials/public-footer', { settings }) %>
+
