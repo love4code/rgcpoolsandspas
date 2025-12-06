@@ -11,6 +11,9 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy - Required for Heroku to work correctly with sessions
+app.set('trust proxy', 1);
+
 // Connect to database
 connectDB();
 
@@ -26,6 +29,9 @@ app.use(methodOverride('_method'));
 
 // Session configuration
 const mongoUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017/rgcpoolandspa';
+// Detect if running on Heroku (Heroku sets DYNO env variable)
+const isHeroku = !!process.env.DYNO;
+const isProduction = process.env.NODE_ENV === 'production' || isHeroku;
 
 const sessionConfig = {
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
@@ -34,10 +40,15 @@ const sessionConfig = {
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
-    secure: false // Set to true in production with HTTPS
+    secure: isProduction, // Use secure cookies in production (Heroku uses HTTPS)
+    sameSite: 'lax' // Use 'lax' for compatibility
   },
   name: 'rgcpool.sid' // Custom session name to avoid conflicts
 };
+
+if (isHeroku) {
+  console.log('🌐 Running on Heroku - sessions configured for HTTPS');
+}
 
 // Create MongoDB store with error handling
 try {
