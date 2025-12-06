@@ -43,6 +43,9 @@ const mediaSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}, {
+  // Ensure Buffer fields are always included
+  selectPopulatedPaths: true
 });
 
 module.exports = mongoose.model('Media', mediaSchema);

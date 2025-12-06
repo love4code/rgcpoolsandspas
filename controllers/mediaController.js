@@ -113,35 +113,61 @@ const uploadMedia = async (req, res) => {
 
 const getMediaImage = async (req, res) => {
   try {
-    // Find media by ID - Buffer fields are included by default
-    const media = await Media.findById(req.params.id);
+    const mediaId = req.params.id;
+    const size = req.params.size || 'medium';
+    
+    // Find media by ID - Buffer fields should be included by default
+    const media = await Media.findById(mediaId);
+    
     if (!media) {
-      console.error('Media not found for ID:', req.params.id);
+      console.error('Media not found for ID:', mediaId);
       return res.status(404).send('Media not found');
     }
+    
+    // Convert to plain object to ensure we get the raw Buffer data
+    const mediaObj = media.toObject ? media.toObject() : media;
+    
+    // Debug logging on Heroku
+    if (process.env.DYNO) {
+      console.log('Media found:', {
+        id: mediaId,
+        originalName: mediaObj.originalName || media.originalName,
+        hasLarge: !!(mediaObj.large || media.large),
+        hasLargeData: !!(mediaObj.large?.data || media.large?.data),
+        largeDataLength: (mediaObj.large?.data || media.large?.data)?.length || 0,
+        hasMedium: !!(mediaObj.medium || media.medium),
+        hasMediumData: !!(mediaObj.medium?.data || media.medium?.data),
+        mediumDataLength: (mediaObj.medium?.data || media.medium?.data)?.length || 0,
+        hasThumbnail: !!(mediaObj.thumbnail || media.thumbnail),
+        hasThumbnailData: !!(mediaObj.thumbnail?.data || media.thumbnail?.data),
+        thumbnailDataLength: (mediaObj.thumbnail?.data || media.thumbnail?.data)?.length || 0
+      });
+    }
 
-    const size = req.params.size || 'medium';
     let imageData, contentType;
 
-    // Get the appropriate size image data
-    if (size === 'large' && media.large && media.large.data) {
-      imageData = media.large.data;
+    // Get the appropriate size image data - try both object and direct access
+    const largeData = mediaObj.large?.data || media.large?.data;
+    const mediumData = mediaObj.medium?.data || media.medium?.data;
+    const thumbnailData = mediaObj.thumbnail?.data || media.thumbnail?.data;
+
+    if (size === 'large' && largeData) {
+      imageData = largeData;
       contentType = 'image/jpeg';
-    } else if (size === 'thumbnail' && media.thumbnail && media.thumbnail.data) {
-      imageData = media.thumbnail.data;
+    } else if (size === 'thumbnail' && thumbnailData) {
+      imageData = thumbnailData;
       contentType = 'image/jpeg';
-    } else if (media.medium && media.medium.data) {
-      imageData = media.medium.data;
+    } else if (mediumData) {
+      imageData = mediumData;
       contentType = 'image/jpeg';
     } else {
-      console.error('Image not found for media:', req.params.id, 'size:', size);
-      console.error('Media object:', {
-        hasLarge: !!media.large,
-        hasLargeData: !!(media.large && media.large.data),
-        hasMedium: !!media.medium,
-        hasMediumData: !!(media.medium && media.medium.data),
-        hasThumbnail: !!media.thumbnail,
-        hasThumbnailData: !!(media.thumbnail && media.thumbnail.data)
+      console.error('Image not found for media:', mediaId, 'size:', size);
+      console.error('Media object check:', {
+        hasLarge: !!largeData,
+        hasMedium: !!mediumData,
+        hasThumbnail: !!thumbnailData,
+        mediaObjKeys: Object.keys(mediaObj || {}),
+        mediaKeys: Object.keys(media || {})
       });
       return res.status(404).send('Image not found');
     }
@@ -149,9 +175,16 @@ const getMediaImage = async (req, res) => {
     // Ensure imageData is a Buffer - handle both Buffer and binary data
     // Mongoose Buffer objects need to be converted to Node.js Buffer
     if (!Buffer.isBuffer(imageData)) {
-      if (imageData && typeof imageData === 'object' && imageData.buffer) {
-        // Handle Mongoose Buffer wrapper
-        imageData = Buffer.from(imageData.buffer || imageData);
+      if (imageData && typeof imageData === 'object') {
+        // Handle Mongoose Buffer wrapper or Binary type
+        if (imageData.buffer) {
+          imageData = Buffer.from(imageData.buffer);
+        } else if (imageData.type === 'Buffer' && Array.isArray(imageData.data)) {
+          // Handle serialized Buffer
+          imageData = Buffer.from(imageData.data);
+        } else {
+          imageData = Buffer.from(imageData);
+        }
       } else if (imageData && typeof imageData === 'string') {
         // Handle base64 or binary string
         imageData = Buffer.from(imageData, 'binary');
@@ -163,15 +196,33 @@ const getMediaImage = async (req, res) => {
     // Verify we have valid image data
     if (!imageData || imageData.length === 0) {
       console.error('Empty or invalid image data for media:', req.params.id);
+      if (process.env.DYNO) {
+        console.error('Image data type:', typeof imageData);
+        console.error('Image data is Buffer:', Buffer.isBuffer(imageData));
+      }
       return res.status(404).send('Image data is empty');
+    }
+
+    // Log successful retrieval on Heroku for debugging
+    if (process.env.DYNO) {
+      console.log('Serving image:', {
+        id: req.params.id,
+        size: size,
+        contentType: contentType,
+        dataLength: imageData.length,
+        isBuffer: Buffer.isBuffer(imageData)
+      });
     }
 
     // Images are already processed with flips applied during upload/regeneration
     // So we can serve them directly
-    res.set('Content-Type', contentType);
-    res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-    res.set('Content-Length', imageData.length);
-    res.send(imageData);
+    // Use writeHead and end for binary data to ensure proper handling
+    res.writeHead(200, {
+      'Content-Type': contentType,
+      'Content-Length': imageData.length,
+      'Cache-Control': 'public, max-age=31536000'
+    });
+    res.end(imageData);
   } catch (error) {
     console.error('Get media error:', error);
     console.error('Error details:', {
@@ -180,7 +231,9 @@ const getMediaImage = async (req, res) => {
       errorMessage: error.message,
       errorStack: error.stack
     });
-    res.status(500).send('Error loading image');
+    if (!res.headersSent) {
+      res.status(500).send('Error loading image');
+    }
   }
 };
 
