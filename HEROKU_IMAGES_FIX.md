@@ -88,3 +88,4 @@ https://rgcpoolandspa-9a631275bb36.herokuapp.com/admin/media/image/[MEDIA_ID]/me
 
 Replace `[MEDIA_ID]` with an actual media ID from your database.
 
+

@@ -54,3 +54,4 @@ echo "1. Run: heroku run node scripts/setup.js --app $APP_NAME"
 echo "2. Deploy: git push heroku main"
 echo "3. Visit: https://$APP_NAME.herokuapp.com"
 
+

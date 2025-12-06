@@ -87,3 +87,4 @@ I notice you have both `connect.sid` and `rgcpool.sid`. This shouldn't happen. T
 
 **The session infrastructure is working - now we just need the login to succeed!**
 
+
