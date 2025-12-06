@@ -83,8 +83,12 @@ app.use('/admin', adminRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).render('error', { message: 'Something went wrong!' });
+  console.error('=== EXPRESS ERROR HANDLER ===');
+  console.error('Error message:', err.message);
+  console.error('Error stack:', err.stack);
+  console.error('Request URL:', req.url);
+  console.error('Request method:', req.method);
+  res.status(500).render('error', { message: err.message || 'Something went wrong!' });
 });
 
 // 404 handler

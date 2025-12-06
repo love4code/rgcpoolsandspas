@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= product.name %> - <%= settings && settings.companyName ? settings.companyName : 'RGC Pool and Spa' %></title>
+  <title><%= typeof product !== 'undefined' && product ? product.name : 'Product Not Found' %> - <%= settings && settings.companyName ? settings.companyName : 'RGC Pool and Spa' %></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <%- include('../../../partials/theme-styles', { settings: typeof settings !== 'undefined' ? settings : null }) %>
+  <%- include('../../partials/theme-styles', { settings: typeof settings !== 'undefined' ? settings : null }) %>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -19,30 +19,39 @@
   </style>
 </head>
 <body>
-<%- include('../../../partials/public-header', { settings }) %>
+<%- include('../../partials/public-header', { settings }) %>
 
 <div class="container my-5">
+  <% if (typeof product === 'undefined' || !product) { %>
+    <div class="alert alert-danger">
+      <h4>Product Not Found</h4>
+      <p>The product you're looking for could not be found.</p>
+      <a href="/products" class="btn btn-primary">View All Products</a>
+    </div>
+  <% } else { %>
   <div class="row">
     <div class="col-lg-8">
       <h1 class="display-4 mb-4"><%= product.name %></h1>
       
-      <% if (product.featuredImage) { %>
+      <% if (product.featuredImage && product.featuredImage._id) { %>
         <img src="/admin/media/image/<%= product.featuredImage._id %>/large" class="img-fluid rounded mb-4" alt="<%= product.name %>">
       <% } %>
 
       <% if (product.images && product.images.length > 0) { %>
         <div class="row g-2 mb-4">
           <% product.images.forEach(image => { %>
-            <div class="col-md-3">
-              <img src="/admin/media/image/<%= image._id %>/medium" class="img-fluid rounded" alt="<%= product.name %>">
-            </div>
+            <% if (image && image._id) { %>
+              <div class="col-md-3">
+                <img src="/admin/media/image/<%= image._id %>/medium" class="img-fluid rounded" alt="<%= product.name %>">
+              </div>
+            <% } %>
           <% }); %>
         </div>
       <% } %>
 
       <div class="mb-4">
         <h3>Description</h3>
-        <p><%= product.description %></p>
+        <p><%= product.description || 'No description available.' %></p>
       </div>
 
       <% if (product.sizes && product.sizes.length > 0) { %>
@@ -57,7 +66,7 @@
       <% } %>
     </div>
 
-    <% if (product.showContactForm) { %>
+    <% if (product.showContactForm !== false) { %>
       <div class="col-lg-4">
         <div class="contact-form">
           <h3 class="mb-4">Request Information</h3>
@@ -126,9 +135,10 @@
       </div>
     <% } %>
   </div>
+  <% } %>
 </div>
 
-<%- include('../../../partials/public-footer', { settings }) %>
+<%- include('../../partials/public-footer', { settings }) %>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const Portfolio = require('../models/Portfolio');
 const Service = require('../models/Service');
@@ -75,9 +76,25 @@ const getContact = async (req, res) => {
 const getProducts = async (req, res) => {
   try {
     const settings = await Settings.getSettings();
-    const products = await Product.find({ active: true })
+    let products = await Product.find({ active: true })
       .populate('featuredImage')
       .sort({ createdAt: -1 });
+
+    // Ensure all products have slugs
+    for (let product of products) {
+      if (!product.slug && product.name) {
+        product.slug = product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        try {
+          await product.save();
+          console.log('Generated slug for product:', product.name, '->', product.slug);
+        } catch (error) {
+          console.error('Error saving product slug:', error);
+        }
+      }
+    }
+    
+    // Filter out products without slugs
+    products = products.filter(product => product.slug);
 
     res.render('public/products/index', {
       settings,
@@ -91,22 +108,114 @@ const getProducts = async (req, res) => {
 
 const getProductDetail = async (req, res) => {
   try {
-    const settings = await Settings.getSettings();
-    const product = await Product.findOne({ slug: req.params.slug, active: true })
+    console.log('=== PRODUCT DETAIL REQUEST ===');
+    console.log('URL:', req.url);
+    console.log('Params:', req.params);
+    console.log('Slug param:', req.params.slug);
+    
+    let settings;
+    try {
+      settings = await Settings.getSettings();
+    } catch (settingsError) {
+      console.error('Error getting settings:', settingsError);
+      settings = {}; // Use empty object as fallback
+    }
+    
+    // Check for invalid slug
+    if (!req.params.slug || req.params.slug === 'undefined' || req.params.slug.trim() === '') {
+      console.log('❌ Invalid slug provided for product');
+      return res.status(404).render('error', { message: 'Invalid product URL' });
+    }
+    
+    // Clean the slug - decode URL encoding if present
+    let cleanSlug = decodeURIComponent(req.params.slug).trim();
+    
+    console.log('🔍 Looking for product with slug:', cleanSlug);
+    
+    // Try to find by slug (exact match)
+    let product = await Product.findOne({ slug: cleanSlug, active: true })
       .populate('images')
       .populate('featuredImage');
 
+    // If not found, try case-insensitive search
     if (!product) {
-      return res.status(404).render('error', { message: 'Product not found' });
+      console.log('⚠️  Product not found with exact slug, trying case-insensitive:', cleanSlug);
+      product = await Product.findOne({ 
+        slug: { $regex: new RegExp(`^${cleanSlug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }, 
+        active: true 
+      })
+        .populate('images')
+        .populate('featuredImage');
     }
 
-    res.render('public/products/detail', {
-      settings,
-      product
+    // If still not found, try finding by ID (in case someone passes an ID instead of slug)
+    if (!product && mongoose.Types.ObjectId.isValid(cleanSlug)) {
+      console.log('⚠️  Trying to find by ID:', cleanSlug);
+      product = await Product.findOne({ _id: cleanSlug, active: true })
+        .populate('images')
+        .populate('featuredImage');
+    }
+
+    // If still not found, log all available products for debugging
+    if (!product) {
+      const allProducts = await Product.find({ active: true }).select('name slug active');
+      console.log('❌ Product not found. Available products:', allProducts.map(p => ({ name: p.name, slug: p.slug, active: p.active })));
+      console.log('Requested slug:', cleanSlug);
+      return res.status(404).render('error', { 
+        message: `Product not found. Requested: "${cleanSlug}"` 
+      });
+    }
+
+    // Filter out any null/undefined images
+    if (product.images) {
+      product.images = product.images.filter(img => img && img._id);
+    }
+
+    // Ensure all product fields are safe for rendering
+    if (!product.description) {
+      product.description = 'No description available.';
+    }
+    if (!product.sizes) {
+      product.sizes = [];
+    }
+    if (product.showContactForm === undefined) {
+      product.showContactForm = true; // Default to showing contact form
+    }
+
+    console.log('✅ Found product:', product.name, 'with slug:', product.slug);
+    console.log('Product data check:', {
+      hasName: !!product.name,
+      hasDescription: !!product.description,
+      hasFeaturedImage: !!product.featuredImage,
+      imagesCount: product.images ? product.images.length : 0,
+      sizesCount: product.sizes ? product.sizes.length : 0,
+      showContactForm: product.showContactForm
     });
+    
+    // Ensure settings is always an object
+    const safeSettings = settings || {};
+    
+    try {
+      res.render('public/products/detail', {
+        settings: safeSettings,
+        product
+      });
+    } catch (renderError) {
+      console.error('❌ Render error:', renderError);
+      console.error('Render error stack:', renderError.stack);
+      console.error('Product data:', {
+        name: product.name,
+        description: product.description,
+        hasFeaturedImage: !!product.featuredImage,
+        imagesCount: product.images ? product.images.length : 0,
+        sizesCount: product.sizes ? product.sizes.length : 0
+      });
+      throw renderError; // Re-throw to be caught by outer catch
+    }
   } catch (error) {
-    console.error('Product detail error:', error);
-    res.status(500).render('error', { message: 'Error loading product' });
+    console.error('❌ Product detail error:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).render('error', { message: 'Error loading product: ' + (error.message || 'Unknown error') });
   }
 };
 

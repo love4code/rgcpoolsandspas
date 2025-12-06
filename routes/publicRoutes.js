@@ -6,6 +6,7 @@ router.get('/', publicController.getHome);
 router.get('/about', publicController.getAbout);
 router.get('/contact', publicController.getContact);
 router.get('/products', publicController.getProducts);
+// Product detail route - must come after /products to avoid conflicts
 router.get('/products/:slug', publicController.getProductDetail);
 router.get('/portfolio', publicController.getPortfolio);
 // Portfolio detail route - must come after /portfolio to avoid conflicts

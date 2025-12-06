@@ -47,8 +47,15 @@ const createProduct = async (req, res) => {
       }
     }
 
+    // Generate slug from name if not provided
+    let slug = req.body.slug;
+    if (!slug && req.body.name) {
+      slug = req.body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+
     const productData = {
       name: req.body.name,
+      slug: slug,
       description: req.body.description,
       sizes: sizes,
       images: req.body.images ? (Array.isArray(req.body.images) ? req.body.images : [req.body.images]) : [],
@@ -84,8 +91,24 @@ const updateProduct = async (req, res) => {
       }
     }
 
+    // Generate slug from name if not provided or if name changed
+    const existingProduct = await Product.findById(req.params.id);
+    let slug = req.body.slug;
+    if (!slug && req.body.name) {
+      // If name changed, regenerate slug
+      if (existingProduct && existingProduct.name !== req.body.name) {
+        slug = req.body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      } else if (existingProduct) {
+        // Keep existing slug if name hasn't changed
+        slug = existingProduct.slug;
+      } else {
+        slug = req.body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      }
+    }
+
     const productData = {
       name: req.body.name,
+      slug: slug,
       description: req.body.description,
       sizes: sizes,
       images: req.body.images ? (Array.isArray(req.body.images) ? req.body.images : [req.body.images]) : [],
