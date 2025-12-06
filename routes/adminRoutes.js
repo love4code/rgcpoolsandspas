@@ -23,6 +23,18 @@ router.get('/test-session', (req, res) => {
   });
 });
 
+// Debug route - test if sessions work
+router.get('/test-session', (req, res) => {
+  res.json({
+    sessionExists: !!req.session,
+    sessionId: req.sessionID,
+    adminId: req.session.adminId || null,
+    isHeroku: !!process.env.DYNO,
+    cookieHeader: req.headers.cookie || 'no cookies',
+    userAgent: req.headers['user-agent']
+  });
+});
+
 // Auth routes
 router.get('/login', adminController.getLogin);
 router.post('/login', adminController.postLogin);

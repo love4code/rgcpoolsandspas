@@ -41,7 +41,7 @@ const postLogin = async (req, res) => {
     req.session.adminId = admin._id.toString();
     
     // Log session info for debugging (will show in Heroku logs)
-    console.log('=== LOGIN ATTEMPT ===');
+    console.log('=== LOGIN SUCCESS ===');
     console.log('Username:', username);
     console.log('Admin ID:', admin._id.toString());
     console.log('Session ID:', req.sessionID);
@@ -52,18 +52,16 @@ const postLogin = async (req, res) => {
     req.session.save((err) => {
       if (err) {
         console.error('❌ Session save error:', err.message);
-        console.error('Error details:', err);
+        console.error('Error stack:', err.stack);
         req.flash('error', 'Login failed - session error: ' + err.message);
         return res.redirect('/admin/login');
       }
       
-      // Verify session was saved
       console.log('✅ Session saved successfully');
       console.log('Session adminId:', req.session.adminId);
       console.log('Session ID:', req.sessionID);
       console.log('Redirecting to dashboard...');
       
-      // Use absolute URL for redirect on Heroku
       res.redirect('/admin/dashboard');
     });
   } catch (error) {
