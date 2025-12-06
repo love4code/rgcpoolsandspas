@@ -18,6 +18,12 @@ const getLogin = (req, res) => {
 const postLogin = async (req, res) => {
   try {
     const { username, password } = req.body;
+    
+    if (!username || !password) {
+      req.flash('error', 'Please provide both username and password');
+      return res.redirect('/admin/login');
+    }
+
     const admin = await Admin.findOne({ username });
 
     if (!admin) {
@@ -31,11 +37,23 @@ const postLogin = async (req, res) => {
       return res.redirect('/admin/login');
     }
 
-    req.session.adminId = admin._id;
-    res.redirect('/admin/dashboard');
+    // Set session data
+    req.session.adminId = admin._id.toString();
+    console.log('Session adminId set:', req.session.adminId);
+    
+    // Save session before redirect to ensure it's persisted
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        req.flash('error', 'Login failed - session error');
+        return res.redirect('/admin/login');
+      }
+      console.log('✅ Login successful, redirecting to dashboard');
+      res.redirect('/admin/dashboard');
+    });
   } catch (error) {
     console.error('Login error:', error);
-    req.flash('error', 'Login failed');
+    req.flash('error', 'Login failed: ' + error.message);
     res.redirect('/admin/login');
   }
 };

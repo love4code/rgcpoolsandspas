@@ -25,17 +25,33 @@ app.use(express.json());
 app.use(methodOverride('_method'));
 
 // Session configuration
-app.use(session({
+const mongoUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017/rgcpoolandspa';
+
+const sessionConfig = {
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/rgcpoolandspa'
-  }),
   cookie: {
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    httpOnly: true,
+    secure: false // Set to true in production with HTTPS
+  },
+  name: 'rgcpool.sid' // Custom session name to avoid conflicts
+};
+
+// Create MongoDB store with error handling
+try {
+  sessionConfig.store = MongoStore.create({
+    mongoUrl: mongoUrl,
+    touchAfter: 24 * 3600, // Lazy session update - only update if session was modified
+    autoRemove: 'native' // Use MongoDB TTL index for session cleanup
+  });
+  console.log('✅ Session store configured with MongoDB');
+} catch (error) {
+  console.warn('⚠️  Could not create MongoStore, sessions may not persist:', error.message);
+}
+
+app.use(session(sessionConfig));
 
 app.use(flash());
 
