@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title + ' - ' : '' %><%= settings && settings.companyName ? settings.companyName : 'RGC Pool and Spa' %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .hero-section {
+      min-height: 60vh;
+      display: flex;
+      align-items: center;
+      background: linear-gradient(135deg, #0066cc 0%, #00aaff 100%);
+      color: white;
+    }
+    .service-card {
+      transition: transform 0.3s;
+      height: 100%;
+    }
+    .service-card:hover {
+      transform: translateY(-5px);
+    }
+    .portfolio-card {
+      overflow: hidden;
+      transition: transform 0.3s;
+    }
+    .portfolio-card:hover {
+      transform: scale(1.05);
+    }
+    .contact-form {
+      background: #f8f9fa;
+      padding: 2rem;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+

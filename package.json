@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "setup": "node scripts/setup.js"
+    "setup": "node scripts/setup.js",
+    "seed": "node scripts/seed.js",
+    "check-db": "node scripts/check-mongodb.js"
   },
   "keywords": ["pool", "spa", "express", "mongodb"],
   "author": "",
