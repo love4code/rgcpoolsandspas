@@ -113,8 +113,10 @@ const uploadMedia = async (req, res) => {
 
 const getMediaImage = async (req, res) => {
   try {
+    // Find media by ID - Buffer fields are included by default
     const media = await Media.findById(req.params.id);
     if (!media) {
+      console.error('Media not found for ID:', req.params.id);
       return res.status(404).send('Media not found');
     }
 
@@ -132,16 +134,52 @@ const getMediaImage = async (req, res) => {
       imageData = media.medium.data;
       contentType = 'image/jpeg';
     } else {
+      console.error('Image not found for media:', req.params.id, 'size:', size);
+      console.error('Media object:', {
+        hasLarge: !!media.large,
+        hasLargeData: !!(media.large && media.large.data),
+        hasMedium: !!media.medium,
+        hasMediumData: !!(media.medium && media.medium.data),
+        hasThumbnail: !!media.thumbnail,
+        hasThumbnailData: !!(media.thumbnail && media.thumbnail.data)
+      });
       return res.status(404).send('Image not found');
+    }
+
+    // Ensure imageData is a Buffer - handle both Buffer and binary data
+    // Mongoose Buffer objects need to be converted to Node.js Buffer
+    if (!Buffer.isBuffer(imageData)) {
+      if (imageData && typeof imageData === 'object' && imageData.buffer) {
+        // Handle Mongoose Buffer wrapper
+        imageData = Buffer.from(imageData.buffer || imageData);
+      } else if (imageData && typeof imageData === 'string') {
+        // Handle base64 or binary string
+        imageData = Buffer.from(imageData, 'binary');
+      } else {
+        imageData = Buffer.from(imageData);
+      }
+    }
+
+    // Verify we have valid image data
+    if (!imageData || imageData.length === 0) {
+      console.error('Empty or invalid image data for media:', req.params.id);
+      return res.status(404).send('Image data is empty');
     }
 
     // Images are already processed with flips applied during upload/regeneration
     // So we can serve them directly
-    res.contentType(contentType);
+    res.set('Content-Type', contentType);
     res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+    res.set('Content-Length', imageData.length);
     res.send(imageData);
   } catch (error) {
     console.error('Get media error:', error);
+    console.error('Error details:', {
+      id: req.params.id,
+      size: req.params.size,
+      errorMessage: error.message,
+      errorStack: error.stack
+    });
     res.status(500).send('Error loading image');
   }
 };
