@@ -60,6 +60,10 @@ const settingsSchema = new mongoose.Schema({
     twitter: String,
     youtube: String
   },
+  facebookPageUrl: {
+    type: String,
+    default: ''
+  },
   footerText: String,
   updatedAt: {
     type: Date,

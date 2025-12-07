@@ -36,13 +36,12 @@ const getProductForm = async (req, res) => {
 const createProduct = async (req, res) => {
   try {
     const sizes = [];
-    if (req.body.sizeLabels && req.body.sizeValues) {
-      const labels = Array.isArray(req.body.sizeLabels) ? req.body.sizeLabels : [req.body.sizeLabels];
+    if (req.body.sizeValues) {
       const values = Array.isArray(req.body.sizeValues) ? req.body.sizeValues : [req.body.sizeValues];
       
-      for (let i = 0; i < labels.length; i++) {
-        if (labels[i] && values[i]) {
-          sizes.push({ label: labels[i], value: values[i] });
+      for (let i = 0; i < values.length; i++) {
+        if (values[i] && values[i].trim()) {
+          sizes.push({ value: values[i].trim() });
         }
       }
     }
@@ -80,13 +79,12 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const sizes = [];
-    if (req.body.sizeLabels && req.body.sizeValues) {
-      const labels = Array.isArray(req.body.sizeLabels) ? req.body.sizeLabels : [req.body.sizeLabels];
+    if (req.body.sizeValues) {
       const values = Array.isArray(req.body.sizeValues) ? req.body.sizeValues : [req.body.sizeValues];
       
-      for (let i = 0; i < labels.length; i++) {
-        if (labels[i] && values[i]) {
-          sizes.push({ label: labels[i], value: values[i] });
+      for (let i = 0; i < values.length; i++) {
+        if (values[i] && values[i].trim()) {
+          sizes.push({ value: values[i].trim() });
         }
       }
     }

@@ -250,6 +250,7 @@
                 <div class="col-md-6">
                   <label class="form-label">Facebook</label>
                   <input type="url" class="form-control" name="facebook" value="<%= settings.socialMedia && settings.socialMedia.facebook ? settings.socialMedia.facebook : '' %>">
+                  <small class="text-muted">Facebook profile/page link</small>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Instagram</label>
@@ -263,6 +264,19 @@
                   <label class="form-label">YouTube</label>
                   <input type="url" class="form-control" name="youtube" value="<%= settings.socialMedia && settings.socialMedia.youtube ? settings.socialMedia.youtube : '' %>">
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mb-3">
+            <div class="card-header"><h5>Facebook Page Embed</h5></div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label">Facebook Page URL</label>
+                <input type="url" class="form-control" name="facebookPageUrl" 
+                       value="<%= settings.facebookPageUrl || '' %>" 
+                       placeholder="https://www.facebook.com/YourPageName">
+                <small class="text-muted">Enter your Facebook page URL to display a Facebook feed iframe at the bottom of the page. Example: https://www.facebook.com/YourPageName</small>
               </div>
             </div>
           </div>

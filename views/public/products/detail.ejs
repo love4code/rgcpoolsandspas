@@ -16,6 +16,39 @@
       padding: 2rem;
       border-radius: 10px;
     }
+    .size-tag {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      margin: 0.25rem;
+      background-color: #e9ecef;
+      border: 2px solid #dee2e6;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .size-tag:hover {
+      background-color: #dee2e6;
+      border-color: #adb5bd;
+    }
+    .size-tag.selected {
+      background-color: #0d6efd;
+      color: white;
+      border-color: #0d6efd;
+    }
+    .size-tag input[type="checkbox"] {
+      display: none;
+    }
+    .selected-sizes-display {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+      min-height: 40px;
+    }
+    .selected-sizes-display .badge {
+      margin: 0.25rem;
+    }
   </style>
 </head>
 <body>
@@ -57,11 +90,11 @@
       <% if (product.sizes && product.sizes.length > 0) { %>
         <div class="mb-4">
           <h3>Available Sizes</h3>
-          <ul class="list-group">
+          <div>
             <% product.sizes.forEach(size => { %>
-              <li class="list-group-item"><%= size.label %> - <%= size.value %></li>
+              <span class="badge bg-secondary me-2 mb-2" style="font-size: 1rem; padding: 0.5rem 1rem;"><%= size.value %></span>
             <% }); %>
-          </ul>
+          </div>
         </div>
       <% } %>
     </div>
@@ -114,15 +147,18 @@
             </div>
             <% if (product.sizes && product.sizes.length > 0) { %>
               <div class="mb-3">
-                <label class="form-label">Pool Sizes (Select Multiple)</label>
-                <% product.sizes.forEach(size => { %>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="selectedSizes" value="<%= size.label %> - <%= size.value %>" id="size<%= size._id || size.label.replace(/\s+/g, '') %>">
-                    <label class="form-check-label" for="size<%= size._id || size.label.replace(/\s+/g, '') %>">
-                      <%= size.label %> - <%= size.value %>
+                <label class="form-label">Pool Sizes (Click to Select)</label>
+                <div class="mb-2">
+                  <% product.sizes.forEach((size, index) => { %>
+                    <label class="size-tag" for="size<%= index %>">
+                      <input type="checkbox" name="selectedSizes" value="<%= size.value %>" id="size<%= index %>" onchange="updateSelectedSizes()">
+                      <%= size.value %>
                     </label>
-                  </div>
-                <% }); %>
+                  <% }); %>
+                </div>
+                <div class="selected-sizes-display" id="selectedSizesDisplay">
+                  <small class="text-muted">No sizes selected</small>
+                </div>
               </div>
             <% } %>
             <div class="mb-3">
@@ -141,5 +177,35 @@
 <%- include('../../partials/public-footer', { settings }) %>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function updateSelectedSizes() {
+    const checkboxes = document.querySelectorAll('input[name="selectedSizes"]:checked');
+    const display = document.getElementById('selectedSizesDisplay');
+    
+    if (checkboxes.length === 0) {
+      display.innerHTML = '<small class="text-muted">No sizes selected</small>';
+    } else {
+      const selectedSizes = Array.from(checkboxes).map(cb => cb.value);
+      display.innerHTML = '<strong>Selected:</strong> ' + selectedSizes.map(size => 
+        '<span class="badge bg-primary">' + size + '</span>'
+      ).join(' ');
+    }
+    
+    // Update tag visual state
+    document.querySelectorAll('.size-tag').forEach(tag => {
+      const checkbox = tag.querySelector('input[type="checkbox"]');
+      if (checkbox.checked) {
+        tag.classList.add('selected');
+      } else {
+        tag.classList.remove('selected');
+      }
+    });
+  }
+  
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    updateSelectedSizes();
+  });
+</script>
 </body>
 </html>

@@ -52,6 +52,8 @@ const updateSettings = async (req, res) => {
       youtube: req.body.youtube || ''
     };
 
+    settings.facebookPageUrl = req.body.facebookPageUrl || '';
+
     await settings.save();
 
     req.flash('success', 'Settings updated successfully');

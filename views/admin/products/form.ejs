@@ -144,11 +144,8 @@
                     <% if (product && product.sizes && product.sizes.length > 0) { %>
                       <% product.sizes.forEach((size, index) => { %>
                         <div class="row mb-2 size-row">
-                          <div class="col-md-5">
-                            <input type="text" class="form-control" name="sizeLabels" placeholder="Size Label" value="<%= size.label %>">
-                          </div>
-                          <div class="col-md-5">
-                            <input type="text" class="form-control" name="sizeValues" placeholder="Size Value" value="<%= size.value %>">
+                          <div class="col-md-10">
+                            <input type="text" class="form-control" name="sizeValues" placeholder="Size Value (e.g., 12x24, 15x30)" value="<%= size.value %>">
                           </div>
                           <div class="col-md-2">
                             <button type="button" class="btn btn-danger btn-sm" onclick="removeSize(this)">Remove</button>
@@ -305,11 +302,8 @@
       const div = document.createElement('div');
       div.className = 'row mb-2 size-row';
       div.innerHTML = `
-        <div class="col-md-5">
-          <input type="text" class="form-control" name="sizeLabels" placeholder="Size Label">
-        </div>
-        <div class="col-md-5">
-          <input type="text" class="form-control" name="sizeValues" placeholder="Size Value">
+        <div class="col-md-10">
+          <input type="text" class="form-control" name="sizeValues" placeholder="Size Value (e.g., 12x24, 15x30)">
         </div>
         <div class="col-md-2">
           <button type="button" class="btn btn-danger btn-sm" onclick="removeSize(this)">Remove</button>

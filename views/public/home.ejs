@@ -41,12 +41,27 @@
       border-radius: 10px;
     }
     .events-list-container {
-      max-height: 400px;
+      height: 500px;
       overflow-y: auto;
       border: 1px solid #dee2e6;
       border-radius: 8px;
       padding: 1rem;
       background: #fff;
+    }
+    .facebook-embed-wrapper {
+      height: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .facebook-embed-container {
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .facebook-embed-container iframe {
+      width: 100% !important;
+      height: 500px !important;
     }
     .event-item {
       padding: 1rem;
@@ -73,6 +88,13 @@
       font-size: 0.85rem;
       color: #6c757d;
       margin-top: 0.25rem;
+    }
+    /* Hide products and projects beyond the 3rd item on smaller screens */
+    @media (max-width: 991.98px) {
+      .products-section .row > div:nth-child(n+4),
+      .portfolio-section .row > div:nth-child(n+4) {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -147,7 +169,7 @@
   <% } %>
 
   <% if (products && products.length > 0) { %>
-    <section class="my-5">
+    <section class="my-5 products-section">
       <h2 class="text-center mb-5">Featured Products</h2>
       <div class="row g-4">
         <% products.forEach(product => { %>
@@ -176,7 +198,7 @@
   <% } %>
 
   <% if (portfolioItems && portfolioItems.length > 0) { %>
-    <section class="my-5">
+    <section class="my-5 portfolio-section">
       <h2 class="text-center mb-5">Featured Projects</h2>
       <div class="row g-4">
         <% portfolioItems.forEach(item => { %>
@@ -203,51 +225,75 @@
     </section>
   <% } %>
 
-  <% if (events && events.length > 0) { %>
+  <% if ((events && events.length > 0) || (settings && settings.facebookPageUrl)) { %>
     <section class="my-5">
-      <div class="row">
-        <div class="col-lg-8 mx-auto">
-          <h2 class="text-center mb-4">Upcoming Events</h2>
-          <div class="events-list-container">
-            <% events.forEach(event => { %>
-              <div class="event-item" 
-                   data-event-id="<%= event._id %>"
-                   data-event-title="<%= event.title %>"
-                   data-event-start="<%= event.startDate.toISOString() %>"
-                   data-event-end="<%= event.endDate ? event.endDate.toISOString() : '' %>"
-                   data-event-allday="<%= event.allDay %>"
-                   data-event-location="<%= event.location || '' %>"
-                   data-event-description="<%= (event.description || '').replace(/"/g, '&quot;') %>">
-                <div class="event-item-title">
-                  <i class="bi bi-calendar-event"></i> <%= event.title %>
-                </div>
-                <div class="event-item-date">
-                  <i class="bi bi-clock"></i> 
-                  <%= new Date(event.startDate).toLocaleDateString('en-US', { 
-                    weekday: 'short', 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric',
-                    hour: event.allDay ? undefined : 'numeric',
-                    minute: event.allDay ? undefined : '2-digit'
-                  }) %>
-                  <% if (event.allDay) { %>
-                    <span class="badge bg-secondary ms-2">All Day</span>
-                  <% } %>
-                </div>
-                <% if (event.location) { %>
-                  <div class="event-item-location">
-                    <i class="bi bi-geo-alt"></i> <%= event.location %>
+      <div class="container">
+        <div class="row g-4">
+          <% if (events && events.length > 0) { %>
+            <div class="col-12 col-md-6">
+              <h2 class="text-center mb-4">Upcoming Events</h2>
+              <div class="events-list-container">
+                <% events.forEach(event => { %>
+                  <div class="event-item" 
+                       data-event-id="<%= event._id %>"
+                       data-event-title="<%= event.title %>"
+                       data-event-start="<%= event.startDate.toISOString() %>"
+                       data-event-end="<%= event.endDate ? event.endDate.toISOString() : '' %>"
+                       data-event-allday="<%= event.allDay %>"
+                       data-event-location="<%= event.location || '' %>"
+                       data-event-description="<%= (event.description || '').replace(/"/g, '&quot;') %>">
+                    <div class="event-item-title">
+                      <i class="bi bi-calendar-event"></i> <%= event.title %>
+                    </div>
+                    <div class="event-item-date">
+                      <i class="bi bi-clock"></i> 
+                      <%= new Date(event.startDate).toLocaleDateString('en-US', { 
+                        weekday: 'short', 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: event.allDay ? undefined : 'numeric',
+                        minute: event.allDay ? undefined : '2-digit'
+                      }) %>
+                      <% if (event.allDay) { %>
+                        <span class="badge bg-secondary ms-2">All Day</span>
+                      <% } %>
+                    </div>
+                    <% if (event.location) { %>
+                      <div class="event-item-location">
+                        <i class="bi bi-geo-alt"></i> <%= event.location %>
+                      </div>
+                    <% } %>
+                    <% if (event.description) { %>
+                      <div class="event-item-description mt-2" style="font-size: 0.85rem; color: #6c757d;">
+                        <%= event.description.length > 100 ? event.description.substring(0, 100) + '...' : event.description %>
+                      </div>
+                    <% } %>
                   </div>
-                <% } %>
-                <% if (event.description) { %>
-                  <div class="event-item-description mt-2" style="font-size: 0.85rem; color: #6c757d;">
-                    <%= event.description.length > 100 ? event.description.substring(0, 100) + '...' : event.description %>
-                  </div>
-                <% } %>
+                <% }); %>
               </div>
-            <% }); %>
-          </div>
+            </div>
+          <% } %>
+          
+          <% if (settings && settings.facebookPageUrl) { %>
+            <div class="col-12 col-md-6">
+              <h2 class="text-center mb-4">Follow Us on Facebook</h2>
+              <div class="facebook-embed-wrapper">
+                <div class="facebook-embed-container">
+                  <iframe 
+                    src="https://www.facebook.com/plugins/page.php?href=<%= encodeURIComponent(settings.facebookPageUrl) %>&tabs=timeline&width=500&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId" 
+                    width="500" 
+                    height="500" 
+                    style="border:none;overflow:hidden;" 
+                    scrolling="no" 
+                    frameborder="0" 
+                    allowfullscreen="true" 
+                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
+                  </iframe>
+                </div>
+              </div>
+            </div>
+          <% } %>
         </div>
       </div>
     </section>
