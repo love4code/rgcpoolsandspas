@@ -89,9 +89,14 @@
       color: #6c757d;
       margin-top: 0.25rem;
     }
-    /* Hide products and projects beyond the 3rd item on smaller screens */
-    @media (max-width: 991.98px) {
-      .products-section .row > div:nth-child(n+4),
+    /* Limit products to 3 items on mobile devices */
+    @media (max-width: 767.98px) {
+      .products-section .row > div:nth-child(n+4) {
+        display: none;
+      }
+    }
+    /* Limit projects display on mobile - 4 projects will show on medium screens (col-md-3) */
+    @media (max-width: 767.98px) {
       .portfolio-section .row > div:nth-child(n+4) {
         display: none;
       }
@@ -173,7 +178,7 @@
       <h2 class="text-center mb-5">Featured Products</h2>
       <div class="row g-4">
         <% products.forEach(product => { %>
-          <div class="col-md-6 col-lg-3">
+          <div class="col-4 col-md-6 col-lg-3">
             <div class="card portfolio-card h-100 shadow-sm">
               <% if (product.featuredImage) { %>
                 <img src="/admin/media/image/<%= product.featuredImage._id %>/medium" class="card-img-top" alt="<%= product.name %>" style="height: 200px; object-fit: cover;">
@@ -202,7 +207,7 @@
       <h2 class="text-center mb-5">Featured Projects</h2>
       <div class="row g-4">
         <% portfolioItems.forEach(item => { %>
-          <div class="col-md-6 col-lg-3">
+          <div class="col-12 col-sm-6 col-md-3 col-lg-3">
             <div class="card portfolio-card h-100 shadow-sm">
               <% if (item.featuredImage) { %>
                 <img src="/admin/media/image/<%= item.featuredImage._id %>/medium" class="card-img-top" alt="<%= item.title %>" style="height: 200px; object-fit: cover;">
