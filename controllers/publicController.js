@@ -14,10 +14,23 @@ const getHome = async (req, res) => {
     const services = await Service.find({ active: true, featured: true })
       .sort({ displayOrder: 1 })
       .limit(3);
+    // Fetch featured portfolio items
     let portfolioItems = await Portfolio.find({ active: true, featured: true })
       .populate('featuredImage')
       .sort({ createdAt: -1 })
-      .limit(4);
+      .limit(8);
+    
+    // If we don't have enough featured items, supplement with recent active items
+    if (portfolioItems.length < 4) {
+      const additionalItems = await Portfolio.find({ 
+        active: true, 
+        featured: { $ne: true } 
+      })
+        .populate('featuredImage')
+        .sort({ createdAt: -1 })
+        .limit(8 - portfolioItems.length);
+      portfolioItems = [...portfolioItems, ...additionalItems];
+    }
     
     // Ensure all portfolio items have slugs
     for (let item of portfolioItems) {
@@ -32,9 +45,13 @@ const getHome = async (req, res) => {
       }
     }
     
-    // Filter out items without slugs
-    portfolioItems = portfolioItems.filter(item => item.slug);
-    console.log('Home page - portfolio items with slugs:', portfolioItems.map(i => ({ title: i.title, slug: i.slug })));
+    // Filter out items without slugs, prioritize featured items, and limit to 4 for display
+    const featuredItems = portfolioItems.filter(item => item.slug && item.featured).slice(0, 4);
+    const nonFeaturedItems = portfolioItems.filter(item => item.slug && !item.featured);
+    
+    // Combine featured items first, then supplement with non-featured if needed
+    portfolioItems = [...featuredItems, ...nonFeaturedItems].slice(0, 4);
+    console.log('Home page - portfolio items with slugs:', portfolioItems.map(i => ({ title: i.title, slug: i.slug, featured: i.featured })));
     
     // Fetch 4 featured products for home page
     let products = await Product.find({ active: true })
