@@ -36,6 +36,33 @@ const getHome = async (req, res) => {
     portfolioItems = portfolioItems.filter(item => item.slug);
     console.log('Home page - portfolio items with slugs:', portfolioItems.map(i => ({ title: i.title, slug: i.slug })));
     
+    // Fetch 4 featured products for home page
+    let products = await Product.find({ active: true })
+      .populate('featuredImage')
+      .sort({ createdAt: -1 })
+      .limit(4);
+    
+    // Ensure all products have slugs
+    for (let product of products) {
+      if (!product.slug && product.name) {
+        product.slug = product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        try {
+          await product.save();
+          console.log('Generated slug for product:', product.name, '->', product.slug);
+        } catch (error) {
+          console.error('Error saving product slug:', error);
+        }
+      }
+    }
+    
+    // Filter out products without slugs
+    products = products.filter(product => product.slug);
+    
+    // Fetch active events for home page
+    const events = await Event.find({ active: true })
+      .sort({ startDate: 1 })
+      .limit(10); // Limit to 10 most recent upcoming events
+    
     let heroImage = null;
     if (settings.heroImage) {
       heroImage = await Media.findById(settings.heroImage);
@@ -45,7 +72,9 @@ const getHome = async (req, res) => {
       settings,
       services,
       portfolioItems,
-      heroImage
+      products,
+      heroImage,
+      events
     });
   } catch (error) {
     console.error('Home page error:', error);
