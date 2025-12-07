@@ -264,15 +264,17 @@ const getMediaModal = async (req, res) => {
 
 const getMediaList = async (req, res) => {
   try {
-    const media = await Media.find()
+    console.log('🔵 GET MEDIA LIST REQUEST');
+    const media = await Media.find({ mimeType: { $regex: /^image\// } })
       .sort({ uploadedAt: -1 })
-      .select('_id originalName title alt')
+      .select('_id originalName title alt mimeType')
       .limit(100);
 
+    console.log('🔵 Media list found:', media.length, 'images');
     res.json({ success: true, media });
   } catch (error) {
     console.error('Get media list error:', error);
-    res.status(500).json({ error: 'Error loading media list' });
+    res.status(500).json({ success: false, error: 'Error loading media list' });
   }
 };
 

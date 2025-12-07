@@ -68,7 +68,18 @@ router.delete('/products/:id', requireAuth, productController.deleteProduct);
 router.get('/portfolio', requireAuth, portfolioController.getPortfolio);
 router.get('/portfolio/new', requireAuth, portfolioController.getPortfolioForm);
 router.get('/portfolio/:id/edit', requireAuth, portfolioController.getPortfolioForm);
-router.post('/portfolio', requireAuth, portfolioController.createPortfolio);
+router.post('/portfolio', requireAuth, (req, res, next) => {
+  console.error('==========================================');
+  console.error('🔵🔵🔵 ROUTE: POST /admin/portfolio hit');
+  console.error('🔵 Request body exists:', !!req.body);
+  console.error('🔵 Request body type:', typeof req.body);
+  console.error('🔵 Request body keys:', req.body ? Object.keys(req.body) : 'no body');
+  console.error('🔵 Request body title:', req.body?.title);
+  console.error('🔵 Request body description:', req.body?.description ? 'exists' : 'missing');
+  console.error('🔵 Full request body:', JSON.stringify(req.body, null, 2));
+  console.error('==========================================');
+  portfolioController.createPortfolio(req, res, next);
+});
 router.post('/portfolio/:id', requireAuth, portfolioController.updatePortfolio);
 router.delete('/portfolio/:id', requireAuth, portfolioController.deletePortfolio);
 

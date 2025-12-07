@@ -120,6 +120,19 @@
           <a href="/admin/portfolio" class="btn btn-secondary">Back</a>
         </div>
 
+        <% if (typeof success !== 'undefined' && success.length > 0) { %>
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <%= success[0] %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error.length > 0) { %>
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <%= error[0] %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% } %>
+
         <form action="<%= item ? `/admin/portfolio/${item._id}` : '/admin/portfolio' %>" method="POST">
           <div class="row">
             <div class="col-md-8">
@@ -181,7 +194,11 @@
                         </li>
                       </ul>
                     </div>
-                    <input type="hidden" id="featuredImageInput" name="featuredImage" value="<%= item && item.featuredImage ? item.featuredImage._id : '' %>">
+                    <% if (item && item.featuredImage) { %>
+                      <input type="hidden" id="featuredImageInput" name="featuredImage" value="<%= item.featuredImage._id %>">
+                    <% } else { %>
+                      <input type="hidden" id="featuredImageInput" name="featuredImage" value="">
+                    <% } %>
                   </div>
                   <div id="featuredImagePreview" class="mt-3">
                     <% if (item && item.featuredImage) { %>
@@ -304,16 +321,26 @@
     }
 
     function loadMediaList() {
+      console.log('Loading media list...');
       fetch('/admin/media/list')
-        .then(res => res.json())
+        .then(res => {
+          console.log('Media list response status:', res.status);
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
         .then(data => {
+          console.log('Media list data received:', data);
           if (data.success && data.media) {
             mediaList = data.media;
+            console.log('Media list loaded, count:', mediaList.length);
             populateFeaturedImageDropdown();
           } else {
+            console.error('Media list response invalid:', data);
             const dropdownMenu = document.getElementById('featuredImageDropdownMenu');
             if (dropdownMenu) {
-              dropdownMenu.innerHTML = '<li><div class="text-center text-muted py-3">Error loading images</div></li>';
+              dropdownMenu.innerHTML = '<li><div class="text-center text-muted py-3">No images available</div></li>';
             }
           }
         })
@@ -327,7 +354,14 @@
     }
 
     function populateFeaturedImageDropdown() {
+      console.log('Populating featured image dropdown, mediaList length:', mediaList.length);
       const dropdownMenu = document.getElementById('featuredImageDropdownMenu');
+      
+      if (!dropdownMenu) {
+        console.error('Dropdown menu element not found!');
+        return;
+      }
+      
       <% if (item && item.featuredImage) { %>
       const currentValue = '<%= item.featuredImage._id %>';
       <% } else { %>
@@ -335,9 +369,12 @@
       <% } %>
       
       if (mediaList.length === 0) {
+        console.log('No media items to display');
         dropdownMenu.innerHTML = '<li><div class="text-center text-muted py-3">No images available in media library</div></li>';
         return;
       }
+      
+      console.log('Populating dropdown with', mediaList.length, 'images');
       
       // Create grid of image thumbnails
       dropdownMenu.innerHTML = '<li><div class="row g-2"></div></li>';
@@ -473,8 +510,18 @@
 
         // Ensure dropdown can open even if content is still loading
         dropdownButton.addEventListener('shown.bs.dropdown', function() {
-          // If media list hasn't loaded yet, trigger a load
-          if (mediaList.length === 0) {
+          console.log('Dropdown opened, mediaList length:', mediaList.length);
+          // If media list hasn't loaded yet or is empty, trigger a load
+          const dropdownMenu = document.getElementById('featuredImageDropdownMenu');
+          if (!dropdownMenu) {
+            console.error('Dropdown menu not found when opening');
+            return;
+          }
+          
+          // Check if we're still showing the loading spinner
+          const isLoading = dropdownMenu.querySelector('.spinner-border');
+          if (isLoading || mediaList.length === 0) {
+            console.log('Reloading media list...');
             loadMediaList();
           }
         });
@@ -518,6 +565,48 @@
         if (div.querySelector(`input[value="${mediaId}"]`)) div.remove();
       });
     }
+
+    // Form submission debugging and handling
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.querySelector('form');
+      if (!form) {
+        console.error('❌ Form element not found!');
+        return;
+      }
+      
+      console.log('🔵 Form found, action:', form.action, 'method:', form.method);
+      
+      form.addEventListener('submit', function(e) {
+        console.log('🔵🔵🔵 FORM SUBMIT EVENT FIRED 🔵🔵🔵');
+        console.log('🔵 Form action:', form.action);
+        console.log('🔵 Form method:', form.method);
+        
+        // Handle empty featuredImage - ensure it's submitted as empty string (server will convert to null)
+        const featuredImageInput = document.getElementById('featuredImageInput');
+        if (featuredImageInput) {
+          if (!featuredImageInput.value || featuredImageInput.value.trim() === '') {
+            featuredImageInput.value = ''; // Ensure it's empty string
+            console.log('🔵 Featured image is empty');
+          } else {
+            console.log('🔵 Featured image ID:', featuredImageInput.value);
+          }
+          // Always ensure the name attribute is set
+          if (!featuredImageInput.name) {
+            featuredImageInput.name = 'featuredImage';
+          }
+        }
+        
+        // Log form data before submission
+        const formData = new FormData(form);
+        console.log('🔵 Form data being submitted:');
+        for (let [key, value] of formData.entries()) {
+          console.log('  -', key + ':', value);
+        }
+        
+        console.log('🔵 Allowing form to submit normally...');
+        // Don't prevent default - let form submit normally (HTML5 validation will handle required fields)
+      });
+    });
   </script>
 </body>
 </html>
