@@ -170,7 +170,7 @@
                           <% } %>
                         </span>
                       </button>
-                      <ul class="dropdown-menu dropdown-menu-end p-3" id="featuredImageDropdownMenu" style="width: 400px; max-height: 400px; overflow-y: auto;">
+                      <ul class="dropdown-menu dropdown-menu-end p-3" id="featuredImageDropdownMenu" style="width: 400px; max-height: 400px; overflow-y: auto;" data-bs-auto-close="outside">
                         <li>
                           <div class="text-center text-muted py-3">
                             <div class="spinner-border spinner-border-sm" role="status">
@@ -234,7 +234,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Mobile sidebar toggle functionality
     (function() {
@@ -292,6 +291,18 @@
       setupFeaturedImageDropdown();
     });
 
+    function getFeaturedImageDropdown() {
+      const dropdownElement = document.getElementById('featuredImageDropdown');
+      if (!dropdownElement) return null;
+      
+      // Get existing instance or create new one
+      let dropdownInstance = bootstrap.Dropdown.getInstance(dropdownElement);
+      if (!dropdownInstance) {
+        dropdownInstance = new bootstrap.Dropdown(dropdownElement);
+      }
+      return dropdownInstance;
+    }
+
     function loadMediaList() {
       fetch('/admin/media/list')
         .then(res => res.json())
@@ -299,10 +310,19 @@
           if (data.success && data.media) {
             mediaList = data.media;
             populateFeaturedImageDropdown();
+          } else {
+            const dropdownMenu = document.getElementById('featuredImageDropdownMenu');
+            if (dropdownMenu) {
+              dropdownMenu.innerHTML = '<li><div class="text-center text-muted py-3">Error loading images</div></li>';
+            }
           }
         })
         .catch(error => {
           console.error('Error loading media list:', error);
+          const dropdownMenu = document.getElementById('featuredImageDropdownMenu');
+          if (dropdownMenu) {
+            dropdownMenu.innerHTML = '<li><div class="text-center text-danger py-3">Error loading images. Please refresh the page.</div></li>';
+          }
         });
     }
 
@@ -334,10 +354,11 @@
         }
         card.style.cursor = 'pointer';
         card.onclick = (e) => {
+          e.preventDefault();
           e.stopPropagation();
           selectFeaturedImage(media._id);
           // Close dropdown
-          const dropdown = bootstrap.Dropdown.getInstance(document.getElementById('featuredImageDropdown'));
+          const dropdown = getFeaturedImageDropdown();
           if (dropdown) dropdown.hide();
         };
         
@@ -437,7 +458,37 @@
     }
 
     function setupFeaturedImageDropdown() {
-      // No longer needed - using click handlers on cards
+      // Ensure dropdown menu stays open when clicking inside it
+      const dropdownMenu = document.getElementById('featuredImageDropdownMenu');
+      const dropdownButton = document.getElementById('featuredImageDropdown');
+      
+      if (dropdownMenu && dropdownButton) {
+        // Prevent dropdown from closing when clicking inside the menu
+        dropdownMenu.addEventListener('click', function(e) {
+          // Allow clicks on cards to work, but prevent dropdown from closing until selection
+          if (e.target.closest('.card')) {
+            e.stopPropagation();
+          }
+        });
+
+        // Ensure dropdown can open even if content is still loading
+        dropdownButton.addEventListener('shown.bs.dropdown', function() {
+          // If media list hasn't loaded yet, trigger a load
+          if (mediaList.length === 0) {
+            loadMediaList();
+          }
+        });
+
+        // Fallback: Ensure dropdown works even if Bootstrap auto-initialization fails
+        // Wait a bit for Bootstrap to initialize, then verify
+        setTimeout(function() {
+          const dropdownInstance = bootstrap.Dropdown.getInstance(dropdownButton);
+          if (!dropdownInstance && typeof bootstrap !== 'undefined') {
+            // Manually initialize if not already initialized
+            new bootstrap.Dropdown(dropdownButton);
+          }
+        }, 100);
+      }
     }
 
     function selectMedia(type) {
